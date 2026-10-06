@@ -1,0 +1,56 @@
+@import "@fontsource/vazirmatn/400.css";
+@import "@fontsource/vazirmatn/500.css";
+@import "@fontsource/vazirmatn/700.css";
+@import "@fontsource/fraunces/latin-500.css";
+@import "@fontsource/fraunces/latin-600-italic.css";
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Vazirmatn", "DejaVu Sans", ui-sans-serif, sans-serif;
+  --font-display: "Fraunces", "Vazirmatn", serif;
+  --color-paper: #f3ecdf;
+  --color-paper-2: #e7dfd0;
+  --color-sheet: #faf6ee;
+  --color-ink: #141414;
+  --color-ink-soft: #3c342c;
+  --color-mute: #746b60;
+  --color-line: #d8d0c2;
+  --color-stamp: #9c3b1e;
+  --color-good: #2f6b45;
+  --color-warn: #8a5a12;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    background: var(--color-paper);
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  ::selection {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
