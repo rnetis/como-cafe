@@ -3,7 +3,7 @@ import { normPhone, uid, validPhone } from "./format";
 import { birthdaySoon, earnedPoints, inSlowHour, tierOf, tierRate } from "./loyalty";
 import type { CheckoutInput, DeskData, Order, OrderLine, StockItem } from "./types";
 
-export type CheckoutError = "empty" | "missing" | "phone";
+export type CheckoutError = "empty" | "missing" | "phone" | "stock";
 
 export function applyCheckout(
   data: DeskData,
@@ -11,7 +11,10 @@ export function applyCheckout(
 ):
   | { ok: true; data: DeskData; order: Order; warnings: string[] }
   | { ok: false; error: CheckoutError } {
-  const linesIn = input.lines.filter((line) => line.qty > 0);
+  const linesIn = input.lines
+    .filter((line) => Number.isFinite(line.qty) && line.qty > 0)
+    .map((line) => ({ ...line, qty: Math.min(99, Math.floor(line.qty)) }))
+    .filter((line) => line.qty > 0);
   if (linesIn.length === 0) return { ok: false, error: "empty" };
 
   const costOf = (sku: string) => data.stock.find((item) => item.sku === sku)?.cost ?? 0;
@@ -27,7 +30,7 @@ export function applyCheckout(
       itemId: item.id,
       nameFa: item.nameFa,
       nameEn: item.nameEn,
-      qty: Math.min(99, line.qty),
+      qty: line.qty,
       unitPrice: item.price + mods.reduce((sum, mod) => sum + mod.price, 0),
       unitCogs:
         recipeCost(item.recipe, costOf) +
@@ -96,11 +99,7 @@ export function applyCheckout(
   let pointsOff = 0;
   if (customer && input.redeemPoints > 0 && data.settings.pointValue > 0) {
     const affordable = Math.floor(afterTier / data.settings.pointValue);
-    pointsRedeemed = Math.min(
-      Math.floor(input.redeemPoints),
-      customer.points,
-      affordable,
-    );
+    pointsRedeemed = Math.min(Math.floor(input.redeemPoints), customer.points, affordable);
     pointsOff = pointsRedeemed * data.settings.pointValue;
   }
 
@@ -135,8 +134,7 @@ export function applyCheckout(
   }
   const pointsAfter = (customer?.points ?? 0) - pointsRedeemed + pointsEarned + bonusPoints;
   const newId = creating ? uid("c") : undefined;
-  const number =
-    data.orders.reduce((max, order) => Math.max(max, order.number), 0) + 1;
+  const number = data.orders.reduce((max, order) => Math.max(max, order.number), 0) + 1;
 
   const order: Order = {
     id: uid("ord"),
@@ -178,12 +176,21 @@ export function applyCheckout(
     }
   }
 
+  // A sale must be all-or-nothing: never book a ticket that consumes stock we
+  // do not have. The till and LAN orders share this path.
+  if (
+    [...usage].some(([sku, used]) => {
+      const item = data.stock.find((entry) => entry.sku === sku);
+      return !item || item.onHand + 1e-9 < used;
+    })
+  )
+    return { ok: false, error: "stock" };
+
   const warnings: string[] = [];
   const stock: StockItem[] = data.stock.map((item) => {
     const used = usage.get(item.sku) ?? 0;
     if (!used) return item;
     const onHand = Math.round((item.onHand - used) * 1000) / 1000;
-    if (onHand < 0) warnings.push(item.sku);
     return { ...item, onHand };
   });
 

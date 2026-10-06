@@ -23,6 +23,8 @@ const payOptions: { id: Pay; fa: string; en: string }[] = [
 function errorText(code: CheckoutError, lang: "fa" | "en") {
   if (code === "empty") return tx(lang, "فیش خالی است", "Ticket is empty");
   if (code === "phone") return tx(lang, "شماره موبایل درست نیست", "That mobile is not valid");
+  if (code === "stock")
+    return tx(lang, "موجودی مواد کافی نیست", "Not enough ingredient stock for this order");
   return tx(lang, "یکی از آیتم‌ها تمام شده", "An item was 86’d");
 }
 
@@ -54,7 +56,9 @@ export function Pos() {
   const guest = customers.find((entry) => entry.id === customerId);
   const normalized = normPhone(phone);
   const matches = phone.trim()
-    ? customers.filter((entry) => entry.phone.includes(normalized) || entry.name.includes(phone.trim())).slice(0, 4)
+    ? customers
+        .filter((entry) => entry.phone.includes(normalized) || entry.name.includes(phone.trim()))
+        .slice(0, 4)
     : [];
   const known = customers.find((entry) => entry.phone === normalized);
   const showNew = validPhone(phone) && !guest && !known;
@@ -81,7 +85,8 @@ export function Pos() {
     let remain = Math.max(0, subtotal - manual);
     const cheapest = lines.reduce((min, line) => Math.min(min, line.unit), subtotal || 0);
     const cap = settings.compCap > 0 ? Math.min(cheapest, settings.compCap) : cheapest;
-    const stamp = useStamp && guest && guest.stamps >= settings.stampGoal ? Math.min(cap, remain) : 0;
+    const stamp =
+      useStamp && guest && guest.stamps >= settings.stampGoal ? Math.min(cap, remain) : 0;
     remain -= stamp;
     const year = new Date().getFullYear();
     const gift =
@@ -94,13 +99,25 @@ export function Pos() {
     remain -= tier;
     const redeemValue = guest ? Math.min(points, guest.points) * settings.pointValue : 0;
     const pointsOff = Math.min(remain, redeemValue);
-    return { lines, subtotal, manual, stamp, gift, tier, pointsOff, total: Math.max(0, remain - pointsOff) };
+    return {
+      lines,
+      subtotal,
+      manual,
+      stamp,
+      gift,
+      tier,
+      pointsOff,
+      total: Math.max(0, remain - pointsOff),
+    };
   }, [cart, menu, discount, useStamp, useGift, guest, settings, points]);
 
   const add = (itemId: string) => {
     setCart((current) => {
       const found = current.find((line) => line.itemId === itemId && line.mods.length === 0);
-      if (found) return current.map((line) => (line.key === found.key ? { ...line, qty: line.qty + 1 } : line));
+      if (found)
+        return current.map((line) =>
+          line.key === found.key ? { ...line, qty: line.qty + 1 } : line,
+        );
       return [...current, { key: `${itemId}-${Date.now()}`, itemId, qty: 1, mods: [] }];
     });
     setOpen(true);
@@ -170,14 +187,18 @@ export function Pos() {
     toast(tx(lang, `فیش ${placed.number} بسته شد`, `Ticket ${placed.number} closed`));
   };
 
-  const favorite = guest?.favoriteId ? menu.find((item) => item.id === guest.favoriteId && item.active) : undefined;
+  const favorite = guest?.favoriteId
+    ? menu.find((item) => item.id === guest.favoriteId && item.active)
+    : undefined;
   const slow = inSlowHour(Date.now(), settings.slowStart, settings.slowEnd);
 
   const ticket = (
     <div className="flex h-full flex-col">
       <div className="flex items-baseline justify-between">
         <h2 className="text-lg font-medium">{tx(lang, "فیش", "Ticket")}</h2>
-        <span className="text-xs text-mute">{preview.lines.reduce((sum, line) => sum + line.qty, 0)}</span>
+        <span className="text-xs text-mute">
+          {preview.lines.reduce((sum, line) => sum + line.qty, 0)}
+        </span>
       </div>
       <label className="mt-3 block">
         <span className="sr-only">{tx(lang, "شماره مهمان", "Guest mobile")}</span>
@@ -226,12 +247,20 @@ export function Pos() {
                 {tx(lang, "مهر", "stamps")} {guest.stamps}/{settings.stampGoal}
               </p>
             </div>
-            <button type="button" className="text-xs text-mute" onClick={() => setCustomerId(undefined)}>
+            <button
+              type="button"
+              className="text-xs text-mute"
+              onClick={() => setCustomerId(undefined)}
+            >
               {tx(lang, "جدا کن", "Detach")}
             </button>
           </div>
           {favorite ? (
-            <button type="button" className="mt-2 text-sm text-stamp" onClick={() => add(favorite.id)}>
+            <button
+              type="button"
+              className="mt-2 text-sm text-stamp"
+              onClick={() => add(favorite.id)}
+            >
               {tx(lang, "معمولش", "Usual")}: {lang === "fa" ? favorite.nameFa : favorite.nameEn}
             </button>
           ) : null}
@@ -265,7 +294,9 @@ export function Pos() {
             <li key={line.key} className="border-b border-line pb-3">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="font-medium">{lang === "fa" ? line.item.nameFa : line.item.nameEn}</p>
+                  <p className="font-medium">
+                    {lang === "fa" ? line.item.nameFa : line.item.nameEn}
+                  </p>
                   <p className="text-xs text-mute">{formatToman(line.unit, lang)}</p>
                 </div>
                 <div className="flex items-center gap-1">
@@ -275,7 +306,11 @@ export function Pos() {
                     onClick={() =>
                       setCart((current) =>
                         current.flatMap((entry) =>
-                          entry.key !== line.key ? entry : entry.qty <= 1 ? [] : [{ ...entry, qty: entry.qty - 1 }],
+                          entry.key !== line.key
+                            ? entry
+                            : entry.qty <= 1
+                              ? []
+                              : [{ ...entry, qty: entry.qty - 1 }],
                         ),
                       )
                     }
@@ -289,7 +324,9 @@ export function Pos() {
                     className="flex size-11 items-center justify-center border border-line"
                     onClick={() =>
                       setCart((current) =>
-                        current.map((entry) => (entry.key === line.key ? { ...entry, qty: entry.qty + 1 } : entry)),
+                        current.map((entry) =>
+                          entry.key === line.key ? { ...entry, qty: entry.qty + 1 } : entry,
+                        ),
                       )
                     }
                     aria-label="+"
@@ -299,7 +336,9 @@ export function Pos() {
                   <button
                     type="button"
                     className="flex size-11 items-center justify-center"
-                    onClick={() => setCart((current) => current.filter((entry) => entry.key !== line.key))}
+                    onClick={() =>
+                      setCart((current) => current.filter((entry) => entry.key !== line.key))
+                    }
                     aria-label={tx(lang, "حذف", "Remove")}
                   >
                     <Trash2 className="size-4" />
@@ -319,13 +358,18 @@ export function Pos() {
                             entry.key === line.key
                               ? {
                                   ...entry,
-                                  mods: on ? entry.mods.filter((id) => id !== mod.id) : [...entry.mods, mod.id],
+                                  mods: on
+                                    ? entry.mods.filter((id) => id !== mod.id)
+                                    : [...entry.mods, mod.id],
                                 }
                               : entry,
                           ),
                         )
                       }
-                      className={cn("h-9 px-2 text-xs", on ? "bg-ink text-paper" : "border border-line")}
+                      className={cn(
+                        "h-9 px-2 text-xs",
+                        on ? "bg-ink text-paper" : "border border-line",
+                      )}
                     >
                       {lang === "fa" ? mod.nameFa : mod.nameEn}
                     </button>
@@ -337,7 +381,11 @@ export function Pos() {
         )}
       </ul>
       <div className="mt-3 space-y-2 border-t border-line pt-3 text-sm">
-        {slow ? <p className="text-xs">{tx(lang, "ساعت آرام: امتیاز این فیش دو برابر است.", "Slow hour: points double.")}</p> : null}
+        {slow ? (
+          <p className="text-xs">
+            {tx(lang, "ساعت آرام: امتیاز این فیش دو برابر است.", "Slow hour: points double.")}
+          </p>
+        ) : null}
         <div className="flex items-center justify-between gap-3">
           <span className="text-mute">{tx(lang, "تخفیف ٪", "Discount %")}</span>
           <input
@@ -351,16 +399,28 @@ export function Pos() {
           />
         </div>
         {guest && guest.stamps >= settings.stampGoal ? (
-          <Toggle on={useStamp} onClick={() => setUseStamp((value) => !value)} label={tx(lang, "مهر رایگان", "Free stamp")} />
+          <Toggle
+            on={useStamp}
+            onClick={() => setUseStamp((value) => !value)}
+            label={tx(lang, "مهر رایگان", "Free stamp")}
+          />
         ) : null}
         {guest && birthdaySoon(guest.birthday) && guest.giftYear !== new Date().getFullYear() ? (
-          <Toggle on={useGift} onClick={() => setUseGift((value) => !value)} label={tx(lang, "هدیه تولد", "Birthday gift")} />
+          <Toggle
+            on={useGift}
+            onClick={() => setUseGift((value) => !value)}
+            label={tx(lang, "هدیه تولد", "Birthday gift")}
+          />
         ) : null}
         {guest && guest.points > 0 ? (
           <div className="flex items-center justify-between">
             <span>{tx(lang, "خرج امتیاز", "Redeem")}</span>
             <span className="flex items-center gap-2">
-              <button type="button" className="size-11 border border-line" onClick={() => setPoints((value) => Math.max(0, value - 50))}>
+              <button
+                type="button"
+                className="size-11 border border-line"
+                onClick={() => setPoints((value) => Math.max(0, value - 50))}
+              >
                 -
               </button>
               <span className="w-10 text-center">{Math.min(points, guest.points)}</span>
@@ -390,7 +450,10 @@ export function Pos() {
               key={option.id}
               type="button"
               onClick={() => setPay(option.id)}
-              className={cn("h-11 text-sm", pay === option.id ? "bg-ink text-paper" : "border border-line")}
+              className={cn(
+                "h-11 text-sm",
+                pay === option.id ? "bg-ink text-paper" : "border border-line",
+              )}
             >
               {tx(lang, option.fa, option.en)}
             </button>
@@ -416,12 +479,22 @@ export function Pos() {
           />
         </div>
         <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-          <CatButton active={!q && cat === "all"} onClick={() => { setCat("all"); setQuery(""); }} label={tx(lang, "همه", "All")} />
+          <CatButton
+            active={!q && cat === "all"}
+            onClick={() => {
+              setCat("all");
+              setQuery("");
+            }}
+            label={tx(lang, "همه", "All")}
+          />
           {CATEGORIES.map((category) => (
             <CatButton
               key={category.id}
               active={!q && cat === category.id}
-              onClick={() => { setCat(category.id); setQuery(""); }}
+              onClick={() => {
+                setCat(category.id);
+                setQuery("");
+              }}
               label={tx(lang, category.fa, category.en)}
             />
           ))}
@@ -435,7 +508,9 @@ export function Pos() {
               className="flex min-h-28 flex-col border border-line bg-sheet p-3 text-start transition-colors duration-200 hover:border-ink"
             >
               <span className="text-xs text-mute">{lang === "fa" ? item.nameEn : item.nameFa}</span>
-              <span className="mt-1 text-base font-medium leading-snug">{lang === "fa" ? item.nameFa : item.nameEn}</span>
+              <span className="mt-1 text-base font-medium leading-snug">
+                {lang === "fa" ? item.nameFa : item.nameEn}
+              </span>
               <span className="mt-auto pt-3 text-stamp">
                 {formatMenu(item.price, lang)}
                 <span className="ms-1 text-xs text-mute">{tx(lang, "هزار", "k")}</span>
@@ -456,12 +531,18 @@ export function Pos() {
           </button>
         ) : null}
       </div>
-      <aside className="mt-6 hidden w-96 shrink-0 border border-line bg-sheet p-4 lg:block">{ticket}</aside>
+      <aside className="mt-6 hidden w-96 shrink-0 border border-line bg-sheet p-4 lg:block">
+        {ticket}
+      </aside>
       {open ? (
         <div className="fixed inset-0 z-40 flex flex-col bg-paper lg:hidden">
           <div className="flex items-center justify-between border-b border-line px-4 py-3">
             <p className="text-sm font-medium">{tx(lang, "فیش", "Ticket")}</p>
-            <button type="button" className="h-11 px-3 text-sm text-mute" onClick={() => setOpen(false)}>
+            <button
+              type="button"
+              className="h-11 px-3 text-sm text-mute"
+              onClick={() => setOpen(false)}
+            >
               {tx(lang, "منو", "Menu")}
             </button>
           </div>
@@ -472,7 +553,15 @@ export function Pos() {
   );
 }
 
-function CatButton({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
+function CatButton({
+  active,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+}) {
   return (
     <button
       type="button"
@@ -489,7 +578,11 @@ function CatButton({ active, label, onClick }: { active: boolean; label: string;
 
 function Toggle({ on, onClick, label }: { on: boolean; onClick: () => void; label: string }) {
   return (
-    <button type="button" onClick={onClick} className={cn("h-11 w-full text-sm", on ? "bg-stamp text-paper" : "border border-line")}>
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn("h-11 w-full text-sm", on ? "bg-stamp text-paper" : "border border-line")}
+    >
       {label}
     </button>
   );

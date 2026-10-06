@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { ComoMark } from "@/components/como/logo";
 import { Btn, fieldClass } from "@/components/como/bits";
 import { expectedDrawer } from "@/lib/figures";
-import { formatCompact, formatWhen, startOfDay, tx } from "@/lib/format";
+import { formatCompact, formatToman, formatWhen, startOfDay, tx } from "@/lib/format";
 import { useLanClient } from "@/lib/lan/client";
 import type { Lang, Pay } from "@/lib/types";
 
@@ -101,6 +101,7 @@ export function Remote() {
               <span className="mt-1 font-medium leading-snug">
                 {lang === "fa" ? item.nameFa : item.nameEn}
               </span>
+              <span className="mt-2 text-sm text-mute">{formatToman(item.price, lang)}</span>
             </button>
           ))}
           {menu.length === 0 && status !== "open" ? (

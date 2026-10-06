@@ -12,7 +12,9 @@ import type {
   DeskData,
   Expense,
   MenuItem,
+  RecipeUse,
   Order,
+  StockItem,
   Settings,
   SmsLog,
   StockReason,
@@ -73,13 +75,22 @@ type Actions = {
   patchSettings: (patch: Partial<Settings>) => void;
   setPrice: (id: string, price: number) => void;
   toggleItem: (id: string) => void;
-  addMenuItem: (item: Pick<MenuItem, "nameFa" | "nameEn" | "category" | "price">) => void;
-  receive: (sku: string, qty: number, cost: number, payCash: boolean) => void;
-  waste: (sku: string, qty: number, note: string) => void;
-  setCount: (sku: string, next: number) => void;
+  saveMenuItem: (
+    item: Pick<MenuItem, "id" | "nameFa" | "nameEn" | "category" | "price" | "recipe">,
+  ) => boolean;
+  removeMenuItem: (id: string) => boolean;
+  addStockItem: (item: Omit<StockItem, "sku">) => boolean;
+  receive: (sku: string, qty: number, cost: number, payCash: boolean) => boolean;
+  waste: (sku: string, qty: number, note: string) => boolean;
+  setCount: (sku: string, next: number) => boolean;
   addExpense: (expense: Omit<Expense, "id" | "at">) => void;
   patchCustomer: (id: string, patch: Partial<Customer>) => void;
-  addCustomer: (input: { name: string; phone: string; birthday: string; notes: string }) => string | "phone" | "bad";
+  addCustomer: (input: {
+    name: string;
+    phone: string;
+    birthday: string;
+    notes: string;
+  }) => string | "phone" | "bad";
   removeCustomer: (id: string) => void;
   logSms: (entry: Omit<SmsLog, "id" | "at">) => void;
   setCredit: (value: number) => void;
@@ -112,36 +123,107 @@ export const useCafe = create<CafeStore>()(
         return { ok: true, order: applied.order, warnings: applied.warnings };
       },
       patchSettings: (patch) => set((state) => ({ settings: { ...state.settings, ...patch } })),
-      setPrice: (id, price) =>
+      setPrice: (id, price) => {
+        if (!Number.isFinite(price) || price <= 0) return;
         set((state) => ({
           menu: state.menu.map((item) =>
-            item.id === id ? { ...item, price: Math.max(0, Math.round(price)) } : item,
+            item.id === id ? { ...item, price: Math.round(price) } : item,
           ),
-        })),
+        }));
+      },
       toggleItem: (id) =>
         set((state) => ({
-          menu: state.menu.map((item) => (item.id === id ? { ...item, active: !item.active } : item)),
+          menu: state.menu.map((item) =>
+            item.id === id ? { ...item, active: !item.active } : item,
+          ),
         })),
-      addMenuItem: (item) =>
+      saveMenuItem: (item) => {
+        const nameFa = item.nameFa.trim();
+        const nameEn = item.nameEn.trim();
+        if (!nameFa || !nameEn || !Number.isFinite(item.price) || item.price <= 0) return false;
+        const seen = new Set<string>();
+        const recipe: RecipeUse[] = [];
+        for (const use of item.recipe) {
+          if (
+            !get().stock.some((entry) => entry.sku === use.sku) ||
+            !Number.isFinite(use.qty) ||
+            use.qty <= 0
+          )
+            return false;
+          if (seen.has(use.sku)) return false;
+          seen.add(use.sku);
+          recipe.push({ sku: use.sku, qty: Math.round(use.qty * 1000) / 1000 });
+        }
+        set((state) => {
+          const existing = item.id ? state.menu.find((entry) => entry.id === item.id) : undefined;
+          const saved: MenuItem = {
+            id: existing?.id ?? uid("item"),
+            category: item.category,
+            nameFa,
+            nameEn,
+            price: Math.round(item.price),
+            recipe,
+            active: existing?.active ?? true,
+          };
+          return {
+            menu: existing
+              ? state.menu.map((entry) => (entry.id === existing.id ? saved : entry))
+              : [...state.menu, saved],
+          };
+        });
+        return true;
+      },
+      removeMenuItem: (id) => {
+        if (get().orders.some((order) => order.lines.some((line) => line.itemId === id)))
+          return false;
+        set((state) => ({ menu: state.menu.filter((entry) => entry.id !== id) }));
+        return true;
+      },
+      addStockItem: (item) => {
+        const nameFa = item.nameFa.trim();
+        const nameEn = item.nameEn.trim();
+        if (
+          !nameFa ||
+          !nameEn ||
+          !Number.isFinite(item.onHand) ||
+          item.onHand < 0 ||
+          !Number.isFinite(item.par) ||
+          item.par < 0 ||
+          !Number.isFinite(item.cost) ||
+          item.cost < 0
+        )
+          return false;
+        if (
+          get().stock.some(
+            (entry) =>
+              entry.nameEn.toLowerCase() === nameEn.toLowerCase() || entry.nameFa === nameFa,
+          )
+        )
+          return false;
+        const sku = `ing-${uid("sku").slice(-8)}`;
         set((state) => ({
-          menu: [
-            ...state.menu,
+          stock: [
+            ...state.stock,
             {
-              id: uid("item"),
-              category: item.category,
-              nameFa: item.nameFa.trim() || "بدون نام",
-              nameEn: item.nameEn.trim() || "Untitled",
-              price: Math.max(0, Math.round(item.price)),
-              recipe: [],
-              active: true,
+              ...item,
+              sku,
+              nameFa,
+              nameEn,
+              onHand: Math.round(item.onHand * 1000) / 1000,
+              par: Math.round(item.par * 1000) / 1000,
+              cost: Math.round(item.cost),
             },
           ],
-        })),
+        }));
+        return true;
+      },
       receive: (sku, qty, cost, payCash) => {
-        if (qty <= 0) return;
+        if (!Number.isFinite(qty) || qty <= 0 || !Number.isFinite(cost) || cost < 0) return false;
+        let changed = false;
         set((state) => {
           const item = state.stock.find((entry) => entry.sku === sku);
           if (!item) return state;
+          changed = true;
           const base = Math.max(0, item.onHand);
           const nextCost =
             cost > 0 ? Math.round((base * item.cost + qty * cost) / (base + qty)) : item.cost;
@@ -165,20 +247,31 @@ export const useCafe = create<CafeStore>()(
             cashMoves: cash.slice(0, 300),
           };
         });
+        return changed;
       },
       waste: (sku, qty, note) => {
-        if (qty <= 0) return;
-        set((state) => ({
-          stock: state.stock.map((entry) =>
-            entry.sku === sku ? { ...entry, onHand: entry.onHand - qty } : entry,
-          ),
-          moves: [move(sku, -qty, "waste", note), ...state.moves].slice(0, 300),
-        }));
+        if (!Number.isFinite(qty) || qty <= 0) return false;
+        let changed = false;
+        set((state) => {
+          const item = state.stock.find((entry) => entry.sku === sku);
+          if (!item || item.onHand < qty) return state;
+          changed = true;
+          return {
+            stock: state.stock.map((entry) =>
+              entry.sku === sku ? { ...entry, onHand: entry.onHand - qty } : entry,
+            ),
+            moves: [move(sku, -qty, "waste", note), ...state.moves].slice(0, 300),
+          };
+        });
+        return changed;
       },
-      setCount: (sku, next) =>
+      setCount: (sku, next) => {
+        if (!Number.isFinite(next) || next < 0) return false;
+        let changed = false;
         set((state) => {
           const item = state.stock.find((entry) => entry.sku === sku);
           if (!item) return state;
+          changed = true;
           const delta = next - item.onHand;
           return {
             stock: state.stock.map((entry) =>
@@ -186,7 +279,9 @@ export const useCafe = create<CafeStore>()(
             ),
             moves: [move(sku, delta, "adjust", "شمارش"), ...state.moves].slice(0, 300),
           };
-        }),
+        });
+        return changed;
+      },
       addExpense: (expense) =>
         set((state) => ({
           expenses: [
