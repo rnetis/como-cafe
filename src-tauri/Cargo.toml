@@ -1,0 +1,28 @@
+[package]
+name = "como-desk"
+version = "1.0.0"
+description = "COMO coffee desk — register, cellar, books, guests, SMS. Shares a live view over the café LAN."
+edition = "2021"
+
+[lib]
+name = "como_desk_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "net"] }
+axum = { version = "0.8", features = ["ws"] }
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
+include_dir = "0.7"
+mime_guess = "2"
+local-ip-address = "0.6"
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1

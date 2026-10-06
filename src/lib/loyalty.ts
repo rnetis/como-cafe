@@ -1,5 +1,5 @@
-import type { Lang, Tier } from "./types";
-import { tx } from "./format";
+import type { Lang, Tier } from "./types.ts";
+import { tx } from "./format.ts";
 
 export function tierOf(spent: number): Tier {
   if (spent >= 20_000_000) return "inner";

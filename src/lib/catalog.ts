@@ -1,4 +1,4 @@
-import type { CategoryId, MenuItem, Mod, RecipeUse, StockItem } from "./types";
+import type { CategoryId, MenuItem, Mod, RecipeUse, StockItem } from "./types.ts";
 
 export const CATEGORIES: { id: CategoryId; fa: string; en: string }[] = [
   { id: "hot-coffee", fa: "قهوه گرم", en: "Hot coffee" },

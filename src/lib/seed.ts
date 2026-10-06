@@ -1,6 +1,6 @@
-import { INGREDIENTS, MENU, recipeCost } from "./catalog";
-import { earnedPoints } from "./loyalty";
-import type { Customer, DeskData, Order, OrderLine, Pay, Settings } from "./types";
+import { INGREDIENTS, MENU, recipeCost } from "./catalog.ts";
+import { earnedPoints } from "./loyalty.ts";
+import type { Customer, DeskData, Order, OrderLine, Pay, Settings } from "./types.ts";
 
 export function defaultSettings(): Settings {
   return {

@@ -2,173 +2,15 @@ import { i as __toESM } from "../_runtime.mjs";
 import { J as require_react, x as require_jsx_runtime } from "../_libs/@tanstack/react-router+[...].mjs";
 import { a as Search, c as Package, d as Coffee, f as BookOpen, i as Settings, l as Minus, o as ScrollText, r as Trash2, s as Plus, t as Users, u as MessageSquare } from "../_libs/lucide-react.mjs";
 import { n as TSS_SERVER_FUNCTION, r as getServerFnById, t as createServerFn } from "./ssr.mjs";
+import { n as create, t as persist } from "../_libs/zustand.mjs";
 import { n as toast, t as Toaster } from "../_libs/sonner.mjs";
 import { t as clsx } from "../_libs/clsx.mjs";
 import { t as twMerge } from "../_libs/tailwind-merge.mjs";
 import { a as ResponsiveContainer, i as Bar, n as YAxis, o as Tooltip, r as XAxis, t as BarChart } from "../_libs/recharts+[...].mjs";
-import { n as create, t as persist } from "../_libs/zustand.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/routes-BHIu6thY.js
+//#region node_modules/.nitro/vite/services/ssr/assets/routes-XVuhaoSN.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
-function cn(...inputs) {
-	return twMerge(clsx(inputs));
-}
-function ComoMark({ className }) {
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
-		viewBox: "0 0 72 240",
-		className: cn("h-16 w-6 text-ink", className),
-		"aria-hidden": "true",
-		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("rect", {
-				x: "1",
-				y: "1",
-				width: "54",
-				height: "214",
-				rx: "8",
-				fill: "currentColor"
-			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("g", {
-				fill: "var(--color-paper)",
-				fontFamily: "Vazirmatn, DejaVu Sans, sans-serif",
-				fontWeight: "800",
-				fontSize: "34",
-				children: [
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("text", {
-						x: "28",
-						y: "50",
-						textAnchor: "middle",
-						children: "C"
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("text", {
-						x: "28",
-						y: "96",
-						textAnchor: "middle",
-						children: "O"
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("text", {
-						x: "28",
-						y: "142",
-						textAnchor: "middle",
-						children: "M"
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("text", {
-						x: "28",
-						y: "188",
-						textAnchor: "middle",
-						children: "O"
-					})
-				]
-			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
-				cx: "62",
-				cy: "222",
-				r: "7",
-				fill: "currentColor"
-			})
-		]
-	});
-}
-function Btn({ tone = "ink", className, type = "button", ...props }) {
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-		type,
-		className: cn("inline-flex h-12 items-center justify-center gap-2 px-4 text-sm font-medium transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-40", tone === "ink" && "bg-ink text-paper", tone === "line" && "border border-line bg-sheet text-ink", tone === "ghost" && "text-ink", tone === "stamp" && "bg-stamp text-paper", className),
-		...props
-	});
-}
-var fieldClass = "h-12 w-full border border-line bg-sheet px-3 text-base text-ink outline-none focus:border-ink";
-function Field({ label, children }) {
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
-		className: "block",
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-			className: "mb-1 block text-xs text-mute",
-			children: label
-		}), children]
-	});
-}
-function Kpi({ label, value, hint }) {
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		className: "border border-line bg-sheet px-3 py-3",
-		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-				className: "text-xs text-mute",
-				children: label
-			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-				className: "mt-1 text-xl font-medium leading-none",
-				children: value
-			}),
-			hint ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-				className: "mt-2 text-xs text-mute",
-				children: hint
-			}) : null
-		]
-	});
-}
-function tx(lang, fa, en) {
-	return lang === "fa" ? fa : en;
-}
-function uid(prefix) {
-	return `${prefix}-${Math.random().toString(36).slice(2, 8)}`;
-}
-var loc = (lang) => lang === "fa" ? "fa-IR" : "en-US";
-function formatToman(n, lang) {
-	const s = new Intl.NumberFormat(loc(lang), { maximumFractionDigits: 0 }).format(Math.round(n));
-	return tx(lang, `${s} تومان`, `${s} toman`);
-}
-function formatCompact(n, lang) {
-	if (Math.abs(n) >= 1e6) {
-		const s = new Intl.NumberFormat(loc(lang), { maximumFractionDigits: 1 }).format(n / 1e6);
-		return tx(lang, `${s} میلیون`, `${s}m`);
-	}
-	return formatToman(n, lang);
-}
-function formatMenu(n, lang) {
-	return new Intl.NumberFormat(loc(lang), { maximumFractionDigits: 0 }).format(Math.round(n / 1e3));
-}
-function formatWhen(ts, lang) {
-	return new Intl.DateTimeFormat(lang === "fa" ? "fa-IR" : "en-GB", {
-		dateStyle: "medium",
-		timeStyle: "short"
-	}).format(new Date(ts));
-}
-function formatDay(ts, lang) {
-	return new Intl.DateTimeFormat(lang === "fa" ? "fa-IR" : "en-GB", {
-		day: "numeric",
-		month: "short"
-	}).format(new Date(ts));
-}
-function startOfDay(ts = Date.now()) {
-	const d = new Date(ts);
-	d.setHours(0, 0, 0, 0);
-	return d.getTime();
-}
-function normPhone(input) {
-	let s = input.replace(/[^\d]/g, "");
-	if (s.startsWith("0098")) s = `0${s.slice(4)}`;
-	else if (s.startsWith("98") && s.length >= 12) s = `0${s.slice(2)}`;
-	else if (s.length === 10 && s.startsWith("9")) s = `0${s}`;
-	return s;
-}
-function validPhone(input) {
-	return /^09\d{9}$/.test(normPhone(input));
-}
-function unitLabel(unit, lang) {
-	if (unit === "g") return tx(lang, "گرم", "g");
-	if (unit === "ml") return tx(lang, "میلی‌لیتر", "ml");
-	return tx(lang, "عدد", "pcs");
-}
-function inRange(ts, range, now = Date.now()) {
-	if (range === "today") return ts >= startOfDay(now);
-	const days = range === "d7" ? 7 : 30;
-	return ts >= startOfDay(now) - (days - 1) * 864e5;
-}
-function expectedDrawer(data) {
-	const cashSales = data.orders.filter((order) => order.pay === "cash").reduce((sum, order) => sum + order.total, 0);
-	const cashExp = data.expenses.filter((expense) => expense.method === "cash").reduce((sum, expense) => sum + expense.amount, 0);
-	const moves = data.cashMoves.reduce((sum, move) => sum + move.amount, 0);
-	return data.settings.float + cashSales + moves - cashExp;
-}
-var CATEGORIES = [
+var CATEGORIES$1 = [
 	{
 		id: "hot-coffee",
 		fa: "قهوه گرم",
@@ -1073,6 +915,59 @@ function recipeCost(recipe, costOf) {
 	for (const use of recipe) total += costOf(use.sku) * use.qty;
 	return Math.round(total);
 }
+function tx(lang, fa, en) {
+	return lang === "fa" ? fa : en;
+}
+function uid(prefix) {
+	return `${prefix}-${typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID().replaceAll("-", "").slice(0, 8) : Math.random().toString(36).slice(2, 10)}`;
+}
+var loc = (lang) => lang === "fa" ? "fa-IR" : "en-US";
+function formatToman(n, lang) {
+	const s = new Intl.NumberFormat(loc(lang), { maximumFractionDigits: 0 }).format(Math.round(n));
+	return tx(lang, `${s} تومان`, `${s} toman`);
+}
+function formatCompact(n, lang) {
+	if (Math.abs(n) >= 1e6) {
+		const s = new Intl.NumberFormat(loc(lang), { maximumFractionDigits: 1 }).format(n / 1e6);
+		return tx(lang, `${s} میلیون`, `${s}m`);
+	}
+	return formatToman(n, lang);
+}
+function formatMenu(n, lang) {
+	return new Intl.NumberFormat(loc(lang), { maximumFractionDigits: 0 }).format(Math.round(n / 1e3));
+}
+function formatWhen(ts, lang) {
+	return new Intl.DateTimeFormat(lang === "fa" ? "fa-IR" : "en-GB", {
+		dateStyle: "medium",
+		timeStyle: "short"
+	}).format(new Date(ts));
+}
+function formatDay(ts, lang) {
+	return new Intl.DateTimeFormat(lang === "fa" ? "fa-IR" : "en-GB", {
+		day: "numeric",
+		month: "short"
+	}).format(new Date(ts));
+}
+function startOfDay(ts = Date.now()) {
+	const d = new Date(ts);
+	d.setHours(0, 0, 0, 0);
+	return d.getTime();
+}
+function normPhone(input) {
+	let s = input.replace(/[^\d]/g, "");
+	if (s.startsWith("0098")) s = `0${s.slice(4)}`;
+	else if (s.startsWith("98") && s.length >= 12) s = `0${s.slice(2)}`;
+	else if (s.length === 10 && s.startsWith("9")) s = `0${s}`;
+	return s;
+}
+function validPhone(input) {
+	return /^09\d{9}$/.test(normPhone(input));
+}
+function unitLabel(unit, lang) {
+	if (unit === "g") return tx(lang, "گرم", "g");
+	if (unit === "ml") return tx(lang, "میلی‌لیتر", "ml");
+	return tx(lang, "عدد", "pcs");
+}
 function tierOf(spent) {
 	if (spent >= 2e7) return "inner";
 	if (spent >= 8e6) return "como";
@@ -1123,216 +1018,6 @@ function earnedPoints(total, per, slow) {
 	const base = Math.floor(total / per);
 	return slow ? base * 2 : base;
 }
-function applyCheckout(data, input) {
-	const linesIn = input.lines.filter((line) => line.qty > 0);
-	if (linesIn.length === 0) return {
-		ok: false,
-		error: "empty"
-	};
-	const costOf = (sku) => data.stock.find((item) => item.sku === sku)?.cost ?? 0;
-	const orderLines = [];
-	for (const line of linesIn) {
-		const item = data.menu.find((entry) => entry.id === line.itemId && entry.active);
-		if (!item) return {
-			ok: false,
-			error: "missing"
-		};
-		const mods = line.mods.map((id) => MODS.find((mod) => mod.id === id)).filter((mod) => Boolean(mod));
-		orderLines.push({
-			itemId: item.id,
-			nameFa: item.nameFa,
-			nameEn: item.nameEn,
-			qty: Math.min(99, line.qty),
-			unitPrice: item.price + mods.reduce((sum, mod) => sum + mod.price, 0),
-			unitCogs: recipeCost(item.recipe, costOf) + mods.reduce((sum, mod) => sum + recipeCost(mod.recipe, costOf), 0),
-			mods: mods.map((mod) => ({
-				id: mod.id,
-				nameFa: mod.nameFa,
-				nameEn: mod.nameEn,
-				price: mod.price
-			}))
-		});
-	}
-	const subtotal = orderLines.reduce((sum, line) => sum + line.unitPrice * line.qty, 0);
-	const pct = Math.min(100, Math.max(0, input.discountPct || 0));
-	const manualOff = Math.round(subtotal * pct / 100);
-	const cheapest = orderLines.reduce((min, line) => Math.min(min, line.unitPrice), subtotal);
-	let customer = input.customerId ? data.customers.find((entry) => entry.id === input.customerId) ?? null : null;
-	let creating = false;
-	let phone = "";
-	if (!customer && input.newPhone?.trim()) {
-		phone = normPhone(input.newPhone);
-		if (!validPhone(phone)) return {
-			ok: false,
-			error: "phone"
-		};
-		const existing = data.customers.find((entry) => entry.phone === phone);
-		if (existing) customer = existing;
-		else creating = true;
-	}
-	const now = Date.now();
-	const year = new Date(now).getFullYear();
-	const goal = Math.max(1, data.settings.stampGoal);
-	const cap = data.settings.compCap;
-	const limited = (price) => cap > 0 ? Math.min(price, cap) : price;
-	let remain = Math.max(0, subtotal - manualOff);
-	let stampOff = 0;
-	let stampRedeemed = false;
-	if (input.useStamp && customer && customer.stamps >= goal && remain > 0) {
-		stampOff = Math.min(limited(cheapest), remain);
-		stampRedeemed = stampOff > 0;
-		remain -= stampOff;
-	}
-	let giftOff = 0;
-	let giftUsed = false;
-	if (input.useGift && customer && birthdaySoon(customer.birthday) && customer.giftYear !== year && remain > 0) {
-		giftOff = Math.min(limited(cheapest), remain);
-		giftUsed = giftOff > 0;
-		remain -= giftOff;
-	}
-	const rate = customer ? tierRate(tierOf(customer.spent)) : 0;
-	const tierOff = Math.round(remain * rate);
-	const afterTier = Math.max(0, remain - tierOff);
-	let pointsRedeemed = 0;
-	let pointsOff = 0;
-	if (customer && input.redeemPoints > 0 && data.settings.pointValue > 0) {
-		const affordable = Math.floor(afterTier / data.settings.pointValue);
-		pointsRedeemed = Math.min(Math.floor(input.redeemPoints), customer.points, affordable);
-		pointsOff = pointsRedeemed * data.settings.pointValue;
-	}
-	const total = Math.max(0, afterTier - pointsOff);
-	const cogs = orderLines.reduce((sum, line) => sum + line.unitCogs * line.qty, 0);
-	const slow = inSlowHour(now, data.settings.slowStart, data.settings.slowEnd);
-	const attached = Boolean(customer) || creating;
-	const pointsEarned = attached ? earnedPoints(total, data.settings.pointsPer, slow) : 0;
-	const qty = orderLines.reduce((sum, line) => sum + line.qty, 0);
-	let bonusPoints = 0;
-	let referrerId;
-	if (creating && input.referralCode?.trim()) {
-		const code = input.referralCode.trim().toUpperCase();
-		const referrer = data.customers.find((entry) => entry.referral.toUpperCase() === code);
-		if (referrer && referrer.phone !== phone) {
-			referrerId = referrer.id;
-			bonusPoints = Math.max(0, data.settings.referralBonus);
-		}
-	}
-	const guestName = customer ? customer.name : creating ? input.newName?.trim() || (data.settings.lang === "fa" ? "مهمان" : "Guest") : "";
-	let stampsAfter = customer?.stamps ?? 0;
-	if (attached) {
-		if (stampRedeemed) stampsAfter = Math.max(0, stampsAfter - goal);
-		stampsAfter += qty;
-	}
-	const pointsAfter = (customer?.points ?? 0) - pointsRedeemed + pointsEarned + bonusPoints;
-	const newId = creating ? uid("c") : void 0;
-	const number = data.orders.reduce((max, order) => Math.max(max, order.number), 0) + 1;
-	const order = {
-		id: uid("ord"),
-		number,
-		at: now,
-		lines: orderLines,
-		subtotal,
-		manualOff,
-		stampOff,
-		giftOff,
-		tierOff,
-		pointsOff,
-		pointsRedeemed,
-		pointsEarned,
-		bonusPoints,
-		total,
-		cogs,
-		pay: input.pay,
-		customerId: customer?.id ?? newId,
-		guestName: guestName || void 0,
-		stampsAfter: attached ? stampsAfter : void 0,
-		pointsAfter: attached ? pointsAfter : void 0,
-		stampRedeemed,
-		giftUsed,
-		note: input.note.trim().slice(0, 140)
-	};
-	const usage = /* @__PURE__ */ new Map();
-	const addUse = (recipe, times) => {
-		for (const use of recipe) usage.set(use.sku, (usage.get(use.sku) ?? 0) + use.qty * times);
-	};
-	for (const line of linesIn) {
-		const item = data.menu.find((entry) => entry.id === line.itemId);
-		if (!item) continue;
-		addUse(item.recipe, line.qty);
-		for (const modId of line.mods) {
-			const mod = MODS.find((entry) => entry.id === modId);
-			if (mod) addUse(mod.recipe, line.qty);
-		}
-	}
-	const warnings = [];
-	const stock = data.stock.map((item) => {
-		const used = usage.get(item.sku) ?? 0;
-		if (!used) return item;
-		const onHand = Math.round((item.onHand - used) * 1e3) / 1e3;
-		if (onHand < 0) warnings.push(item.sku);
-		return {
-			...item,
-			onHand
-		};
-	});
-	const moves = [...[...usage.entries()].map(([sku, amount]) => ({
-		id: uid("mv"),
-		at: now,
-		sku,
-		qty: -amount,
-		reason: "sale",
-		note: `#${number}`
-	})), ...data.moves].slice(0, 300);
-	let customers = data.customers.map((entry) => ({ ...entry }));
-	if (referrerId) customers = customers.map((entry) => entry.id === referrerId ? {
-		...entry,
-		points: entry.points + bonusPoints
-	} : entry);
-	const top = [...orderLines].sort((a, b) => b.qty * b.unitPrice - a.qty * a.unitPrice)[0];
-	if (customer) customers = customers.map((entry) => entry.id === customer.id ? {
-		...entry,
-		stamps: stampsAfter,
-		points: pointsAfter,
-		visits: entry.visits + 1,
-		spent: entry.spent + total,
-		lastVisit: now,
-		favoriteId: entry.favoriteId || top?.itemId,
-		giftYear: giftUsed ? year : entry.giftYear
-	} : entry);
-	else if (creating && newId) {
-		let referral = `C${phone.slice(-4)}`;
-		if (customers.some((entry) => entry.referral === referral)) referral = `C${phone.slice(-6)}`;
-		customers = [{
-			id: newId,
-			name: guestName,
-			phone,
-			birthday: "",
-			notes: "",
-			points: pointsAfter,
-			stamps: stampsAfter,
-			visits: 1,
-			spent: total,
-			createdAt: now,
-			lastVisit: now,
-			smsOptIn: true,
-			referral,
-			referredBy: referrerId,
-			favoriteId: top?.itemId,
-			giftYear: 0
-		}, ...customers];
-	}
-	return {
-		ok: true,
-		order,
-		warnings,
-		data: {
-			...data,
-			stock,
-			moves,
-			customers,
-			orders: [order, ...data.orders].slice(0, 500)
-		}
-	};
-}
 function defaultSettings() {
 	return {
 		lang: "fa",
@@ -1381,7 +1066,7 @@ var ROTATION = [
 	["nut-queen"],
 	["como-salty", "americano"]
 ];
-var PAYS = [
+var PAYS$1 = [
 	"card",
 	"cash",
 	"card",
@@ -1446,7 +1131,7 @@ function buildOrders(settings) {
 			bonusPoints: 0,
 			total: subtotal,
 			cogs,
-			pay: PAYS[(day + slot) % PAYS.length] ?? "card",
+			pay: PAYS$1[(day + slot) % PAYS$1.length] ?? "card",
 			customerId,
 			stampRedeemed: false,
 			giftUsed: false,
@@ -1695,6 +1380,544 @@ function snapshotOf(data) {
 		credit: data.credit
 	};
 }
+/**
+* Structural firewall for untrusted desk data (restored backups and the
+* localStorage payload rehydrated on boot). Anything malformed is coerced or
+* dropped — a corrupt or hand-edited save must never brick the POS or poison
+* the books with NaNs. The output is always a complete DeskData.
+*
+* Array caps mirror the write-side slices in store.ts so a bloated backup
+* cannot smuggle in more rows than the store would ever keep.
+*/
+var MENU_CAP = 500;
+var STOCK_CAP = 500;
+var CUSTOMERS_CAP = 2e4;
+var ORDERS_CAP = 500;
+var EXPENSES_CAP = 400;
+var MOVES_CAP = 300;
+var CASH_CAP = 300;
+var SMS_CAP = 80;
+var CLOSES_CAP = 60;
+var CATEGORIES = [
+	"hot-coffee",
+	"iced-coffee",
+	"brew",
+	"hot-drinks",
+	"mocktail"
+];
+var PAYS = [
+	"cash",
+	"card",
+	"online"
+];
+var UNITS = [
+	"g",
+	"ml",
+	"pcs"
+];
+var REASONS = [
+	"sale",
+	"purchase",
+	"waste",
+	"adjust"
+];
+var EXPENSE_CATS = [
+	"rent",
+	"payroll",
+	"utilities",
+	"supplies",
+	"other"
+];
+var SMS_KINDS = [
+	"receipt",
+	"welcome",
+	"loyalty",
+	"campaign",
+	"birthday"
+];
+var row = (value) => value && typeof value === "object" && !Array.isArray(value) ? value : null;
+var arr = (value) => Array.isArray(value) ? value : [];
+var str = (value, fallback = "") => typeof value === "string" ? value : typeof value === "number" ? String(value) : fallback;
+var num = (value, fallback = 0) => {
+	if (typeof value === "number" && Number.isFinite(value)) return value;
+	if (typeof value === "string" && value.trim()) {
+		const parsed = Number(value);
+		if (Number.isFinite(parsed)) return parsed;
+	}
+	return fallback;
+};
+var nonNegative = (value, fallback = 0) => Math.max(0, num(value, fallback));
+var bool = (value, fallback) => typeof value === "boolean" ? value : fallback;
+/** Keep the value only when it is one of the allowed literals. */
+var oneOf = (value, allowed, fallback) => typeof value === "string" && allowed.includes(value) ? value : fallback;
+var epoch = (value) => {
+	const ts = num(value);
+	return ts > 0 && ts < 41024448e5 ? Math.round(ts) : Date.now();
+};
+var recipe = (value) => arr(value).map((use) => row(use)).filter((use) => use !== null && typeof use.sku === "string" && use.sku.length > 0).map((use) => ({
+	sku: use.sku,
+	qty: num(use.qty, 1)
+}));
+function menu(raw) {
+	return arr(raw).map((entry) => row(entry)).filter((entry) => entry !== null && typeof entry.id === "string" && entry.id.length > 0).map((entry) => ({
+		id: entry.id,
+		category: oneOf(entry.category, CATEGORIES, "hot-coffee"),
+		nameFa: str(entry.nameFa, "بدون نام"),
+		nameEn: str(entry.nameEn, "Untitled"),
+		price: nonNegative(entry.price),
+		recipe: recipe(entry.recipe),
+		active: bool(entry.active, true)
+	})).slice(0, MENU_CAP);
+}
+function stock(raw) {
+	return arr(raw).map((entry) => row(entry)).filter((entry) => entry !== null && typeof entry.sku === "string" && entry.sku.length > 0).map((entry) => ({
+		sku: entry.sku,
+		nameFa: str(entry.nameFa, entry.sku),
+		nameEn: str(entry.nameEn, entry.sku),
+		unit: oneOf(entry.unit, UNITS, "pcs"),
+		onHand: num(entry.onHand),
+		par: nonNegative(entry.par),
+		cost: nonNegative(entry.cost)
+	})).slice(0, STOCK_CAP);
+}
+function customers(raw) {
+	return arr(raw).map((entry) => row(entry)).filter((entry) => entry !== null && typeof entry.id === "string" && entry.id.length > 0).map((entry) => ({
+		id: entry.id,
+		name: str(entry.name, "مهمان"),
+		phone: str(entry.phone),
+		birthday: /^\d{4}-\d{2}-\d{2}$/.test(str(entry.birthday)) ? entry.birthday : "",
+		notes: str(entry.notes),
+		points: nonNegative(entry.points),
+		stamps: nonNegative(entry.stamps),
+		visits: nonNegative(entry.visits),
+		spent: nonNegative(entry.spent),
+		createdAt: epoch(entry.createdAt),
+		lastVisit: num(entry.lastVisit),
+		smsOptIn: bool(entry.smsOptIn, true),
+		referral: str(entry.referral),
+		referredBy: typeof entry.referredBy === "string" ? entry.referredBy : void 0,
+		favoriteId: typeof entry.favoriteId === "string" ? entry.favoriteId : void 0,
+		giftYear: nonNegative(entry.giftYear)
+	})).slice(0, CUSTOMERS_CAP);
+}
+function orders(raw) {
+	return arr(raw).map((entry) => row(entry)).filter((entry) => entry !== null && typeof entry.id === "string" && entry.id.length > 0).map((entry) => {
+		const lines = arr(entry.lines).map((line) => row(line)).filter((line) => line !== null && typeof line.itemId === "string").map((line) => ({
+			itemId: line.itemId,
+			nameFa: str(line.nameFa),
+			nameEn: str(line.nameEn),
+			qty: Math.min(999, Math.max(0, num(line.qty, 1))),
+			unitPrice: nonNegative(line.unitPrice),
+			unitCogs: nonNegative(line.unitCogs),
+			mods: arr(line.mods).map((mod) => row(mod)).filter((mod) => mod !== null).map((mod) => ({
+				id: str(mod.id),
+				nameFa: str(mod.nameFa),
+				nameEn: str(mod.nameEn),
+				price: nonNegative(mod.price)
+			}))
+		}));
+		return {
+			id: entry.id,
+			number: Math.max(0, Math.round(num(entry.number))),
+			at: epoch(entry.at),
+			lines,
+			subtotal: nonNegative(entry.subtotal),
+			manualOff: nonNegative(entry.manualOff),
+			stampOff: nonNegative(entry.stampOff),
+			giftOff: nonNegative(entry.giftOff),
+			tierOff: nonNegative(entry.tierOff),
+			pointsOff: nonNegative(entry.pointsOff),
+			pointsRedeemed: nonNegative(entry.pointsRedeemed),
+			pointsEarned: nonNegative(entry.pointsEarned),
+			bonusPoints: nonNegative(entry.bonusPoints),
+			total: nonNegative(entry.total),
+			cogs: nonNegative(entry.cogs),
+			pay: oneOf(entry.pay, PAYS, "card"),
+			customerId: typeof entry.customerId === "string" ? entry.customerId : void 0,
+			guestName: typeof entry.guestName === "string" ? entry.guestName : void 0,
+			stampsAfter: typeof entry.stampsAfter === "number" ? entry.stampsAfter : void 0,
+			pointsAfter: typeof entry.pointsAfter === "number" ? entry.pointsAfter : void 0,
+			stampRedeemed: bool(entry.stampRedeemed, false),
+			giftUsed: bool(entry.giftUsed, false),
+			note: str(entry.note).slice(0, 140)
+		};
+	}).slice(0, ORDERS_CAP);
+}
+function expenses(raw) {
+	return arr(raw).map((entry) => row(entry)).filter((entry) => entry !== null && typeof entry.id === "string" && entry.id.length > 0).map((entry) => ({
+		id: entry.id,
+		at: epoch(entry.at),
+		category: oneOf(entry.category, EXPENSE_CATS, "other"),
+		amount: nonNegative(entry.amount),
+		note: str(entry.note),
+		method: oneOf(entry.method, [
+			"cash",
+			"card",
+			"transfer"
+		], "cash")
+	})).slice(0, EXPENSES_CAP);
+}
+function moves(raw) {
+	return arr(raw).map((entry) => row(entry)).filter((entry) => entry !== null && typeof entry.id === "string" && entry.id.length > 0).map((entry) => ({
+		id: entry.id,
+		at: epoch(entry.at),
+		sku: str(entry.sku),
+		qty: num(entry.qty),
+		reason: oneOf(entry.reason, REASONS, "adjust"),
+		note: str(entry.note)
+	})).slice(0, MOVES_CAP);
+}
+function cashMoves(raw) {
+	return arr(raw).map((entry) => row(entry)).filter((entry) => entry !== null && typeof entry.id === "string" && entry.id.length > 0).map((entry) => ({
+		id: entry.id,
+		at: epoch(entry.at),
+		amount: num(entry.amount),
+		note: str(entry.note)
+	})).slice(0, CASH_CAP);
+}
+function smsLogs(raw) {
+	return arr(raw).map((entry) => row(entry)).filter((entry) => entry !== null && typeof entry.id === "string" && entry.id.length > 0).map((entry) => ({
+		id: entry.id,
+		at: epoch(entry.at),
+		to: arr(entry.to).map((to) => str(to)).filter(Boolean),
+		body: str(entry.body),
+		kind: oneOf(entry.kind, SMS_KINDS, "campaign"),
+		status: oneOf(entry.status, [
+			"sent",
+			"demo",
+			"failed"
+		], "failed"),
+		detail: str(entry.detail)
+	})).slice(0, SMS_CAP);
+}
+function closes(raw) {
+	return arr(raw).map((entry) => row(entry)).filter((entry) => entry !== null && typeof entry.id === "string" && entry.id.length > 0).map((entry) => ({
+		id: entry.id,
+		at: epoch(entry.at),
+		sales: nonNegative(entry.sales),
+		cash: nonNegative(entry.cash),
+		card: nonNegative(entry.card),
+		online: nonNegative(entry.online),
+		expenses: nonNegative(entry.expenses),
+		drawer: num(entry.drawer),
+		note: str(entry.note)
+	})).slice(0, CLOSES_CAP);
+}
+function settings(raw) {
+	const base = defaultSettings();
+	const patch = row(raw);
+	if (!patch) return base;
+	return {
+		...base,
+		lang: oneOf(patch.lang, ["fa", "en"], base.lang),
+		addressFa: str(patch.addressFa, base.addressFa),
+		addressEn: str(patch.addressEn, base.addressEn),
+		phone: str(patch.phone, base.phone),
+		instagram: str(patch.instagram, base.instagram),
+		pointsPer: nonNegative(patch.pointsPer, base.pointsPer),
+		pointValue: nonNegative(patch.pointValue, base.pointValue),
+		stampGoal: Math.max(1, nonNegative(patch.stampGoal, base.stampGoal)),
+		compCap: nonNegative(patch.compCap, base.compCap),
+		slowStart: Math.min(23, Math.max(0, Math.round(num(patch.slowStart, base.slowStart)))),
+		slowEnd: Math.min(24, Math.max(0, Math.round(num(patch.slowEnd, base.slowEnd)))),
+		referralBonus: nonNegative(patch.referralBonus, base.referralBonus),
+		float: num(patch.float, base.float),
+		smsApiKey: str(patch.smsApiKey).slice(0, 200),
+		smsLine: str(patch.smsLine).slice(0, 24),
+		paper: patch.paper === 58 ? 58 : 80,
+		baud: patch.baud === 115200 ? 115200 : 9600,
+		autoPrint: bool(patch.autoPrint, base.autoPrint),
+		autoSms: bool(patch.autoSms, base.autoSms)
+	};
+}
+/**
+* Validate + normalize an untrusted snapshot. Returns null when the payload is
+* not recognizably desk data at all (no menu array), so the caller can reject
+* instead of silently resetting a good store.
+*/
+function sanitizeDeskData(raw) {
+	const data = row(raw);
+	if (!data || !Array.isArray(data.menu)) return null;
+	return {
+		menu: menu(data.menu),
+		stock: stock(data.stock),
+		customers: customers(data.customers),
+		orders: orders(data.orders),
+		expenses: expenses(data.expenses),
+		moves: moves(data.moves),
+		cashMoves: cashMoves(data.cashMoves),
+		smsLogs: smsLogs(data.smsLogs),
+		closes: closes(data.closes),
+		settings: settings(data.settings),
+		credit: row(data.credit) === null ? null : (() => {
+			const credit = row(data.credit);
+			return {
+				value: nonNegative(credit.value),
+				at: epoch(credit.at)
+			};
+		})()
+	};
+}
+function applyCheckout(data, input) {
+	const linesIn = input.lines.filter((line) => line.qty > 0);
+	if (linesIn.length === 0) return {
+		ok: false,
+		error: "empty"
+	};
+	const costOf = (sku) => data.stock.find((item) => item.sku === sku)?.cost ?? 0;
+	const orderLines = [];
+	for (const line of linesIn) {
+		const item = data.menu.find((entry) => entry.id === line.itemId && entry.active);
+		if (!item) return {
+			ok: false,
+			error: "missing"
+		};
+		const mods = line.mods.map((id) => MODS.find((mod) => mod.id === id)).filter((mod) => Boolean(mod));
+		orderLines.push({
+			itemId: item.id,
+			nameFa: item.nameFa,
+			nameEn: item.nameEn,
+			qty: Math.min(99, line.qty),
+			unitPrice: item.price + mods.reduce((sum, mod) => sum + mod.price, 0),
+			unitCogs: recipeCost(item.recipe, costOf) + mods.reduce((sum, mod) => sum + recipeCost(mod.recipe, costOf), 0),
+			mods: mods.map((mod) => ({
+				id: mod.id,
+				nameFa: mod.nameFa,
+				nameEn: mod.nameEn,
+				price: mod.price
+			}))
+		});
+	}
+	const subtotal = orderLines.reduce((sum, line) => sum + line.unitPrice * line.qty, 0);
+	const pct = Math.min(100, Math.max(0, input.discountPct || 0));
+	const manualOff = Math.round(subtotal * pct / 100);
+	const cheapest = orderLines.reduce((min, line) => Math.min(min, line.unitPrice), subtotal);
+	let customer = input.customerId ? data.customers.find((entry) => entry.id === input.customerId) ?? null : null;
+	let creating = false;
+	let phone = "";
+	if (!customer && input.newPhone?.trim()) {
+		phone = normPhone(input.newPhone);
+		if (!validPhone(phone)) return {
+			ok: false,
+			error: "phone"
+		};
+		const existing = data.customers.find((entry) => entry.phone === phone);
+		if (existing) customer = existing;
+		else creating = true;
+	}
+	const now = Date.now();
+	const year = new Date(now).getFullYear();
+	const goal = Math.max(1, data.settings.stampGoal);
+	const cap = data.settings.compCap;
+	const limited = (price) => cap > 0 ? Math.min(price, cap) : price;
+	let remain = Math.max(0, subtotal - manualOff);
+	let stampOff = 0;
+	let stampRedeemed = false;
+	if (input.useStamp && customer && customer.stamps >= goal && remain > 0) {
+		stampOff = Math.min(limited(cheapest), remain);
+		stampRedeemed = stampOff > 0;
+		remain -= stampOff;
+	}
+	let giftOff = 0;
+	let giftUsed = false;
+	if (input.useGift && customer && birthdaySoon(customer.birthday) && customer.giftYear !== year && remain > 0) {
+		giftOff = Math.min(limited(cheapest), remain);
+		giftUsed = giftOff > 0;
+		remain -= giftOff;
+	}
+	const rate = customer ? tierRate(tierOf(customer.spent)) : 0;
+	const tierOff = Math.round(remain * rate);
+	const afterTier = Math.max(0, remain - tierOff);
+	let pointsRedeemed = 0;
+	let pointsOff = 0;
+	if (customer && input.redeemPoints > 0 && data.settings.pointValue > 0) {
+		const affordable = Math.floor(afterTier / data.settings.pointValue);
+		pointsRedeemed = Math.min(Math.floor(input.redeemPoints), customer.points, affordable);
+		pointsOff = pointsRedeemed * data.settings.pointValue;
+	}
+	const total = Math.max(0, afterTier - pointsOff);
+	const cogs = orderLines.reduce((sum, line) => sum + line.unitCogs * line.qty, 0);
+	const slow = inSlowHour(now, data.settings.slowStart, data.settings.slowEnd);
+	const attached = Boolean(customer) || creating;
+	const pointsEarned = attached ? earnedPoints(total, data.settings.pointsPer, slow) : 0;
+	const qty = orderLines.reduce((sum, line) => sum + line.qty, 0);
+	let bonusPoints = 0;
+	let referrerId;
+	if (creating && input.referralCode?.trim()) {
+		const code = input.referralCode.trim().toUpperCase();
+		const referrer = data.customers.find((entry) => entry.referral.toUpperCase() === code);
+		if (referrer && referrer.phone !== phone) {
+			referrerId = referrer.id;
+			bonusPoints = Math.max(0, data.settings.referralBonus);
+		}
+	}
+	const guestName = customer ? customer.name : creating ? input.newName?.trim() || (data.settings.lang === "fa" ? "مهمان" : "Guest") : "";
+	let stampsAfter = customer?.stamps ?? 0;
+	if (attached) {
+		if (stampRedeemed) stampsAfter = Math.max(0, stampsAfter - goal);
+		stampsAfter += qty;
+	}
+	const pointsAfter = (customer?.points ?? 0) - pointsRedeemed + pointsEarned + bonusPoints;
+	const newId = creating ? uid("c") : void 0;
+	const number = data.orders.reduce((max, order) => Math.max(max, order.number), 0) + 1;
+	const order = {
+		id: uid("ord"),
+		number,
+		at: now,
+		lines: orderLines,
+		subtotal,
+		manualOff,
+		stampOff,
+		giftOff,
+		tierOff,
+		pointsOff,
+		pointsRedeemed,
+		pointsEarned,
+		bonusPoints,
+		total,
+		cogs,
+		pay: input.pay,
+		customerId: customer?.id ?? newId,
+		guestName: guestName || void 0,
+		stampsAfter: attached ? stampsAfter : void 0,
+		pointsAfter: attached ? pointsAfter : void 0,
+		stampRedeemed,
+		giftUsed,
+		note: input.note.trim().slice(0, 140)
+	};
+	const usage = /* @__PURE__ */ new Map();
+	const addUse = (recipe, times) => {
+		for (const use of recipe) usage.set(use.sku, (usage.get(use.sku) ?? 0) + use.qty * times);
+	};
+	for (const line of linesIn) {
+		const item = data.menu.find((entry) => entry.id === line.itemId);
+		if (!item) continue;
+		addUse(item.recipe, line.qty);
+		for (const modId of line.mods) {
+			const mod = MODS.find((entry) => entry.id === modId);
+			if (mod) addUse(mod.recipe, line.qty);
+		}
+	}
+	const warnings = [];
+	const stock = data.stock.map((item) => {
+		const used = usage.get(item.sku) ?? 0;
+		if (!used) return item;
+		const onHand = Math.round((item.onHand - used) * 1e3) / 1e3;
+		if (onHand < 0) warnings.push(item.sku);
+		return {
+			...item,
+			onHand
+		};
+	});
+	const moves = [...[...usage.entries()].map(([sku, amount]) => ({
+		id: uid("mv"),
+		at: now,
+		sku,
+		qty: -amount,
+		reason: "sale",
+		note: `#${number}`
+	})), ...data.moves].slice(0, 300);
+	let customers = data.customers.map((entry) => ({ ...entry }));
+	if (referrerId) customers = customers.map((entry) => entry.id === referrerId ? {
+		...entry,
+		points: entry.points + bonusPoints
+	} : entry);
+	const top = [...orderLines].sort((a, b) => b.qty * b.unitPrice - a.qty * a.unitPrice)[0];
+	if (customer) customers = customers.map((entry) => entry.id === customer.id ? {
+		...entry,
+		stamps: stampsAfter,
+		points: pointsAfter,
+		visits: entry.visits + 1,
+		spent: entry.spent + total,
+		lastVisit: now,
+		favoriteId: entry.favoriteId || top?.itemId,
+		giftYear: giftUsed ? year : entry.giftYear
+	} : entry);
+	else if (creating && newId) {
+		let referral = `C${phone.slice(-4)}`;
+		if (customers.some((entry) => entry.referral === referral)) referral = `C${phone.slice(-6)}`;
+		customers = [{
+			id: newId,
+			name: guestName,
+			phone,
+			birthday: "",
+			notes: "",
+			points: pointsAfter,
+			stamps: stampsAfter,
+			visits: 1,
+			spent: total,
+			createdAt: now,
+			lastVisit: now,
+			smsOptIn: true,
+			referral,
+			referredBy: referrerId,
+			favoriteId: top?.itemId,
+			giftYear: 0
+		}, ...customers];
+	}
+	return {
+		ok: true,
+		order,
+		warnings,
+		data: {
+			...data,
+			stock,
+			moves,
+			customers,
+			orders: [order, ...data.orders].slice(0, 500)
+		}
+	};
+}
+function inRange(ts, range, now = Date.now()) {
+	if (range === "today") return ts >= startOfDay(now);
+	const days = range === "d7" ? 7 : 30;
+	return ts >= startOfDay(now) - (days - 1) * 864e5;
+}
+function expectedDrawer(data) {
+	const cashSales = data.orders.filter((order) => order.pay === "cash").reduce((sum, order) => sum + order.total, 0);
+	const cashExp = data.expenses.filter((expense) => expense.method === "cash").reduce((sum, expense) => sum + expense.amount, 0);
+	const moves = data.cashMoves.reduce((sum, move) => sum + move.amount, 0);
+	return data.settings.float + cashSales + moves - cashExp;
+}
+/**
+* localStorage wrapper that never throws. A full quota (private mode, years of
+* books) or a corrupt/half-written save must not crash a `set()` mid-shift or
+* kill the boot: failed reads return null so the desk opens on seed data, and
+* failed writes keep the in-memory store running while logging loudly.
+*/
+function deskStorage() {
+	try {
+		const raw = window.localStorage;
+		return {
+			getItem: (name) => {
+				try {
+					const text = raw.getItem(name);
+					if (text === null) return null;
+					return JSON.parse(text);
+				} catch (error) {
+					console.error("[como] saved desk unreadable — starting from seed", error);
+					return null;
+				}
+			},
+			setItem: (name, value) => {
+				try {
+					raw.setItem(name, JSON.stringify(value));
+				} catch (error) {
+					console.error("[como] saving the desk failed — storage full or blocked", error);
+				}
+			},
+			removeItem: (name) => {
+				try {
+					raw.removeItem(name);
+				} catch (error) {
+					console.error("[como] clearing the saved desk failed", error);
+				}
+			}
+		};
+	} catch {
+		return;
+	}
+}
 function move(sku, qty, reason, note) {
 	return {
 		id: uid("mv"),
@@ -1853,17 +2076,10 @@ var useCafe = create()(persist((set, get) => ({
 		}, ...state.closes].slice(0, 60) };
 	}),
 	importBackup: (raw) => {
-		if (!raw || typeof raw !== "object") return false;
-		const data = raw;
-		if (!Array.isArray(data.menu) || !Array.isArray(data.orders) || !Array.isArray(data.stock)) return false;
-		const fresh = initialData();
+		const data = sanitizeDeskData(raw);
+		if (!data) return false;
 		set({
-			...fresh,
 			...data,
-			settings: {
-				...fresh.settings,
-				...data.settings ?? {}
-			},
 			receiptId: null
 		});
 		return true;
@@ -1874,6 +2090,16 @@ var useCafe = create()(persist((set, get) => ({
 	})
 }), {
 	name: "como-desk-v1",
+	version: 1,
+	migrate: (persisted) => sanitizeDeskData(persisted) ?? initialData(),
+	merge: (persisted, current) => {
+		const clean = sanitizeDeskData(persisted);
+		return clean ? {
+			...current,
+			...clean
+		} : current;
+	},
+	storage: deskStorage(),
 	partialize: (state) => ({
 		menu: state.menu,
 		stock: state.stock,
@@ -1888,6 +2114,167 @@ var useCafe = create()(persist((set, get) => ({
 		credit: state.credit
 	})
 }));
+/**
+* Daily rotating snapshots of the books, kept alongside the live save in
+* localStorage. The store already persists every change — this protects
+* against the failures persistence cannot absorb: a bad restore, a buggy
+* write, or an accidental reset. Three slots rotate per day, so recovery can
+* reach back up to three days.
+*/
+var META_KEY = "como-backup-meta";
+var SLOTS = [
+	"como-backup-0",
+	"como-backup-1",
+	"como-backup-2"
+];
+/** At most ~20 hours between snapshots — a fresh day always gets a fresh copy. */
+var MAX_AGE_MS = 72e6;
+function readMeta() {
+	try {
+		const raw = localStorage.getItem(META_KEY);
+		if (!raw) return null;
+		const parsed = JSON.parse(raw);
+		if (typeof parsed.index !== "number" || parsed.index < 0 || parsed.index >= SLOTS.length || typeof parsed.at !== "number") return null;
+		return {
+			index: parsed.index,
+			at: parsed.at
+		};
+	} catch {
+		return null;
+	}
+}
+function writeSlot(index, data) {
+	try {
+		localStorage.setItem(SLOTS[index], JSON.stringify(data));
+		return true;
+	} catch {
+		return false;
+	}
+}
+/** Snapshot the current books into the next rotation slot, once per day. */
+function maybeAutoBackup() {
+	if (typeof window === "undefined") return;
+	const meta = readMeta();
+	if (meta && Date.now() - meta.at < MAX_AGE_MS) return;
+	const index = ((meta?.index ?? -1) + 1) % SLOTS.length;
+	if (writeSlot(index, snapshotOf(useCafe.getState()))) try {
+		localStorage.setItem(META_KEY, JSON.stringify({
+			index,
+			at: Date.now()
+		}));
+	} catch {}
+}
+/** The most recent auto-backup, validated through the same firewall as imports. */
+function readAutoBackup() {
+	if (typeof window === "undefined") return null;
+	const meta = readMeta();
+	if (!meta) return null;
+	try {
+		const raw = localStorage.getItem(SLOTS[meta.index]);
+		if (!raw) return null;
+		const data = sanitizeDeskData(JSON.parse(raw));
+		return data ? {
+			data,
+			at: meta.at
+		} : null;
+	} catch {
+		return null;
+	}
+}
+function cn(...inputs) {
+	return twMerge(clsx(inputs));
+}
+function ComoMark({ className }) {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+		viewBox: "0 0 72 240",
+		className: cn("h-16 w-6 text-ink", className),
+		"aria-hidden": "true",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("rect", {
+				x: "1",
+				y: "1",
+				width: "54",
+				height: "214",
+				rx: "8",
+				fill: "currentColor"
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("g", {
+				fill: "var(--color-paper)",
+				fontFamily: "Vazirmatn, DejaVu Sans, sans-serif",
+				fontWeight: "800",
+				fontSize: "34",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("text", {
+						x: "28",
+						y: "50",
+						textAnchor: "middle",
+						children: "C"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("text", {
+						x: "28",
+						y: "96",
+						textAnchor: "middle",
+						children: "O"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("text", {
+						x: "28",
+						y: "142",
+						textAnchor: "middle",
+						children: "M"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("text", {
+						x: "28",
+						y: "188",
+						textAnchor: "middle",
+						children: "O"
+					})
+				]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+				cx: "62",
+				cy: "222",
+				r: "7",
+				fill: "currentColor"
+			})
+		]
+	});
+}
+function Btn({ tone = "ink", className, type = "button", ...props }) {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+		type,
+		className: cn("inline-flex h-12 items-center justify-center gap-2 px-4 text-sm font-medium transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-40", tone === "ink" && "bg-ink text-paper", tone === "line" && "border border-line bg-sheet text-ink", tone === "ghost" && "text-ink", tone === "stamp" && "bg-stamp text-paper", className),
+		...props
+	});
+}
+var fieldClass = "h-12 w-full border border-line bg-sheet px-3 text-base text-ink outline-none focus:border-ink";
+function Field({ label, children }) {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+		className: "block",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+			className: "mb-1 block text-xs text-mute",
+			children: label
+		}), children]
+	});
+}
+function Kpi({ label, value, hint }) {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "border border-line bg-sheet px-3 py-3",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+				className: "text-xs text-mute",
+				children: label
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+				className: "mt-1 text-xl font-medium leading-none",
+				children: value
+			}),
+			hint ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+				className: "mt-2 text-xs text-mute",
+				children: hint
+			}) : null
+		]
+	});
+}
 var ranges = [
 	{
 		id: "today",
@@ -3028,6 +3415,7 @@ function House() {
 	const lang = store.settings.lang;
 	const settings = store.settings;
 	const [arm, setArm] = (0, import_react.useState)(false);
+	const [restoreArm, setRestoreArm] = (0, import_react.useState)(false);
 	const [nameFa, setNameFa] = (0, import_react.useState)("");
 	const [nameEn, setNameEn] = (0, import_react.useState)("");
 	const [category, setCategory] = (0, import_react.useState)("hot-coffee");
@@ -3198,7 +3586,7 @@ function House() {
 								children: lang === "fa" ? item.nameFa : item.nameEn
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
 								className: "text-xs text-mute",
-								children: tx(lang, CATEGORIES.find((entry) => entry.id === item.category)?.fa ?? "", CATEGORIES.find((entry) => entry.id === item.category)?.en ?? "")
+								children: tx(lang, CATEGORIES$1.find((entry) => entry.id === item.category)?.fa ?? "", CATEGORIES$1.find((entry) => entry.id === item.category)?.en ?? "")
 							})]
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
@@ -3251,7 +3639,7 @@ function House() {
 						className: fieldClass,
 						value: category,
 						onChange: (event) => setCategory(event.target.value),
-						children: CATEGORIES.map((entry) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+						children: CATEGORIES$1.map((entry) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
 							value: entry.id,
 							children: tx(lang, entry.fa, entry.en)
 						}, entry.id))
@@ -3313,6 +3701,36 @@ function House() {
 						children: arm ? tx(lang, "بله، از نو", "Yes, start over") : tx(lang, "پاک کردن شیفت نمونه", "Clear the sample shift")
 					})
 				]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+				className: "mt-8 text-lg font-medium",
+				children: tx(lang, "پشتیبان روزانه", "Daily auto-backup")
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+				className: "mt-2 max-w-xl text-xs text-mute",
+				children: tx(lang, "روزی یک نسخه از دفتر روی همین دستگاه نگه داشته می‌شود — سه روز عقب. اگر بازیابی یا پاک‌کردن اشتباه بود، اینجا برگرد.", "One copy of the books per day is kept on this device — three days deep. If a restore or a reset went wrong, step back here.")
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "mt-3 flex flex-wrap items-center gap-2",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Btn, {
+					tone: "line",
+					onClick: () => {
+						const backup = readAutoBackup();
+						if (!backup) {
+							toast(tx(lang, "هنوز پشتیبانی نیست", "No backup yet"));
+							return;
+						}
+						if (!restoreArm) {
+							setRestoreArm(true);
+							toast(tx(lang, `نسخه ${formatWhen(backup.at, lang)} — دوباره بزن تا برگردد`, `Backup of ${formatWhen(backup.at, lang)} — press again to restore`));
+							return;
+						}
+						setRestoreArm(false);
+						if (store.importBackup(backup.data)) toast(tx(lang, "دفتر برگشت", "The books came back"));
+						else toast(tx(lang, "نسخه خوانده نشد", "The backup could not be read"));
+					},
+					children: restoreArm ? tx(lang, "بله، برگردان", "Yes, restore it") : tx(lang, "بازیابی آخرین پشتیبان", "Restore the last backup")
+				})
 			})
 		]
 	});
@@ -3801,7 +4219,7 @@ function Pos() {
 								setQuery("");
 							},
 							label: tx(lang, "همه", "All")
-						}), CATEGORIES.map((category) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CatButton, {
+						}), CATEGORIES$1.map((category) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CatButton, {
 							active: !q && cat === category.id,
 							onClick: () => {
 								setCat(category.id);
@@ -4625,9 +5043,13 @@ function Home() {
 	(0, import_react.useEffect)(() => {
 		if (useCafe.persist.hasHydrated()) {
 			setReady(true);
+			maybeAutoBackup();
 			return;
 		}
-		return useCafe.persist.onFinishHydration(() => setReady(true));
+		return useCafe.persist.onFinishHydration(() => {
+			setReady(true);
+			maybeAutoBackup();
+		});
 	}, []);
 	if (!ready) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Boot, {});
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Desk, {});

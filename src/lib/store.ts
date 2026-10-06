@@ -1,9 +1,10 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, type PersistStorage } from "zustand/middleware";
 import { applyCheckout, type CheckoutError } from "./checkout";
 import { expectedDrawer } from "./figures";
 import { startOfDay, uid, normPhone } from "./format";
 import { initialData, snapshotOf } from "./seed";
+import { sanitizeDeskData } from "./sanitize";
 import type {
   CashMove,
   CheckoutInput,
@@ -19,6 +20,51 @@ import type {
 
 type CheckoutOk = { ok: true; order: Order; warnings: string[] };
 type CheckoutFail = { ok: false; error: CheckoutError };
+
+/** The shape `partialize` writes: the whole DeskData minus the transient receipt id. */
+type PersistedDesk = DeskData;
+/** The persisted envelope zustand wraps around the partialized state. */
+type PersistedEnvelope = { state: PersistedDesk; version?: number };
+
+/**
+ * localStorage wrapper that never throws. A full quota (private mode, years of
+ * books) or a corrupt/half-written save must not crash a `set()` mid-shift or
+ * kill the boot: failed reads return null so the desk opens on seed data, and
+ * failed writes keep the in-memory store running while logging loudly.
+ */
+function deskStorage(): PersistStorage<PersistedDesk> | undefined {
+  try {
+    const raw = window.localStorage;
+    return {
+      getItem: (name) => {
+        try {
+          const text = raw.getItem(name);
+          if (text === null) return null;
+          return JSON.parse(text) as PersistedEnvelope;
+        } catch (error) {
+          console.error("[como] saved desk unreadable — starting from seed", error);
+          return null;
+        }
+      },
+      setItem: (name, value) => {
+        try {
+          raw.setItem(name, JSON.stringify(value));
+        } catch (error) {
+          console.error("[como] saving the desk failed — storage full or blocked", error);
+        }
+      },
+      removeItem: (name) => {
+        try {
+          raw.removeItem(name);
+        } catch (error) {
+          console.error("[como] clearing the saved desk failed", error);
+        }
+      },
+    };
+  } catch {
+    return undefined; // storage blocked entirely — run in-memory
+  }
+}
 
 type Actions = {
   receiptId: string | null;
@@ -225,24 +271,31 @@ export const useCafe = create<CafeStore>()(
           };
         }),
       importBackup: (raw) => {
-        if (!raw || typeof raw !== "object") return false;
-        const data = raw as Partial<DeskData>;
-        if (!Array.isArray(data.menu) || !Array.isArray(data.orders) || !Array.isArray(data.stock)) {
-          return false;
-        }
-        const fresh = initialData();
-        set({
-          ...fresh,
-          ...data,
-          settings: { ...fresh.settings, ...(data.settings ?? {}) },
-          receiptId: null,
-        });
+        // Same firewall as rehydration: a bad file is coerced or rejected, never
+        // merged raw into the books.
+        const data = sanitizeDeskData(raw);
+        if (!data) return false;
+        set({ ...data, receiptId: null });
         return true;
       },
       reset: () => set({ ...initialData(), receiptId: null }),
     }),
     {
       name: "como-desk-v1",
+      // Bump when DeskData changes shape; migrate() coerces older saves.
+      version: 1,
+      // Rehydrated payloads pass the same firewall as restored backups — an
+      // old or hand-edited save becomes a complete DeskData instead of
+      // crashing the desk on boot.
+      migrate: (persisted) => sanitizeDeskData(persisted) ?? initialData(),
+      // merge runs on EVERY hydration (migrate only fires on version
+      // mismatch), so a same-version corrupt-but-parseable save is sanitized
+      // here too — nothing reaches the store unvalidated.
+      merge: (persisted, current) => {
+        const clean = sanitizeDeskData(persisted);
+        return clean ? { ...current, ...clean } : current;
+      },
+      storage: deskStorage(),
       partialize: (state) => ({
         menu: state.menu,
         stock: state.stock,

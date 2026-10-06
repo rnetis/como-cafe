@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { toast } from "sonner";
+import { readAutoBackup } from "@/lib/autosave";
 import { Btn, Field, fieldClass } from "@/components/como/bits";
 import { CATEGORIES } from "@/lib/catalog";
-import { formatMenu, tx } from "@/lib/format";
+import { formatMenu, formatWhen, tx } from "@/lib/format";
 import { buildReceiptDoc, printReceipt } from "@/lib/receipt";
 import { snapshotOf } from "@/lib/seed";
 import { useCafe } from "@/lib/store";
@@ -12,6 +14,7 @@ export function House() {
   const lang = store.settings.lang;
   const settings = store.settings;
   const [arm, setArm] = useState(false);
+  const [restoreArm, setRestoreArm] = useState(false);
   const [nameFa, setNameFa] = useState("");
   const [nameEn, setNameEn] = useState("");
   const [category, setCategory] = useState<CategoryId>("hot-coffee");
@@ -188,6 +191,46 @@ export function House() {
         </label>
         <Btn tone="stamp" onClick={() => (arm ? store.reset() : setArm(true))}>
           {arm ? tx(lang, "بله، از نو", "Yes, start over") : tx(lang, "پاک کردن شیفت نمونه", "Clear the sample shift")}
+        </Btn>
+      </div>
+
+      <h2 className="mt-8 text-lg font-medium">{tx(lang, "پشتیبان روزانه", "Daily auto-backup")}</h2>
+      <p className="mt-2 max-w-xl text-xs text-mute">
+        {tx(
+          lang,
+          "روزی یک نسخه از دفتر روی همین دستگاه نگه داشته می‌شود — سه روز عقب. اگر بازیابی یا پاک‌کردن اشتباه بود، اینجا برگرد.",
+          "One copy of the books per day is kept on this device — three days deep. If a restore or a reset went wrong, step back here.",
+        )}
+      </p>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <Btn
+          tone="line"
+          onClick={() => {
+            const backup = readAutoBackup();
+            if (!backup) {
+              toast(tx(lang, "هنوز پشتیبانی نیست", "No backup yet"));
+              return;
+            }
+            if (!restoreArm) {
+              setRestoreArm(true);
+              toast(
+                tx(
+                  lang,
+                  `نسخه ${formatWhen(backup.at, lang)} — دوباره بزن تا برگردد`,
+                  `Backup of ${formatWhen(backup.at, lang)} — press again to restore`,
+                ),
+              );
+              return;
+            }
+            setRestoreArm(false);
+            if (store.importBackup(backup.data)) {
+              toast(tx(lang, "دفتر برگشت", "The books came back"));
+            } else {
+              toast(tx(lang, "نسخه خوانده نشد", "The backup could not be read"));
+            }
+          }}
+        >
+          {restoreArm ? tx(lang, "بله، برگردان", "Yes, restore it") : tx(lang, "بازیابی آخرین پشتیبان", "Restore the last backup")}
         </Btn>
       </div>
     </div>

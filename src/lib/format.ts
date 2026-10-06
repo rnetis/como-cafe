@@ -1,11 +1,18 @@
-import type { Lang, Unit } from "./types";
+import type { Lang, Unit } from "./types.ts";
 
 export function tx(lang: Lang, fa: string, en: string) {
   return lang === "fa" ? fa : en;
 }
 
 export function uid(prefix: string) {
-  return `${prefix}-${Math.random().toString(36).slice(2, 8)}`;
+  // crypto.randomUUID exists in every modern browser and Node 19+. Eight hex
+  // chars keep ids short while pushing birthday collisions out of reach
+  // (Math.random's 36^6 space starts colliding around ~50k live ids).
+  const random =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID().replaceAll("-", "").slice(0, 8)
+      : Math.random().toString(36).slice(2, 10);
+  return `${prefix}-${random}`;
 }
 
 const loc = (lang: Lang) => (lang === "fa" ? "fa-IR" : "en-US");

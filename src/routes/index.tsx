@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { maybeAutoBackup } from "@/lib/autosave";
 import { Desk } from "@/components/como/desk";
 import { ComoMark } from "@/components/como/logo";
 import { useCafe } from "@/lib/store";
@@ -12,9 +13,13 @@ function Home() {
   useEffect(() => {
     if (useCafe.persist.hasHydrated()) {
       setReady(true);
+      maybeAutoBackup();
       return;
     }
-    return useCafe.persist.onFinishHydration(() => setReady(true));
+    return useCafe.persist.onFinishHydration(() => {
+      setReady(true);
+      maybeAutoBackup();
+    });
   }, []);
 
   if (!ready) return <Boot />;
