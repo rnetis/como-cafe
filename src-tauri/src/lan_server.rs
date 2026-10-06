@@ -101,7 +101,7 @@ async fn handle_socket(socket: WebSocket, state: LanState) {
                     .emit("lan-message", String::from_utf8_lossy(&bytes).to_string());
             }
             Ok(_) => {}
-            Err(_) | None => break,
+            Err(_) => break,
         }
     }
 

@@ -3,7 +3,6 @@ mod lan_server;
 use axum::extract::ws::Message;
 use lan_server::{serve_lan, Clients};
 use serde::Serialize;
-use tauri::Emitter;
 use tokio::sync::{oneshot, Mutex};
 
 /// What the webview needs to draw the LAN panel: is the shelf on, where can a
