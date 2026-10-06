@@ -22,6 +22,29 @@ npm test            # node:test suites (scripts + lib)
 npm run build       # production build + db migrations
 ```
 
+## Desktop app
+
+COMO Desk also ships as a Tauri desktop app for Windows, macOS (Intel and
+Apple Silicon), and Linux. The desktop bundle keeps the books on that computer
+and can serve the register to phones and tablets on the café's local network.
+
+To run the desktop shell locally, install the [Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/)
+for your operating system, then run:
+
+```sh
+npm run tauri:dev
+```
+
+To create a native release bundle for your current operating system:
+
+```sh
+npm run tauri -- build
+```
+
+Pushing a version tag such as `v1.0.0` builds and publishes installers for all
+supported desktop platforms through GitHub Actions. The installers are
+unsigned; Windows and macOS may show their standard first-run security prompts.
+
 ## Where the data lives
 
 The books run **fully client-side**: zustand persisted to `localStorage`

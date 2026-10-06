@@ -95,7 +95,10 @@ export function parseLanMessage(raw: string): LanMessage | null {
     if (typeof message.id !== "string" || !message.id) return null;
     const lines = (Array.isArray(message.lines) ? message.lines : [])
       .map(row)
-      .filter((line): line is Row => line !== null && typeof line.itemId === "string" && line.itemId.length > 0)
+      .filter(
+        (line): line is Row & { itemId: string } =>
+          line !== null && typeof line.itemId === "string" && line.itemId.length > 0,
+      )
       .slice(0, MAX_ORDER_LINES)
       .map((line) => ({
         itemId: line.itemId,

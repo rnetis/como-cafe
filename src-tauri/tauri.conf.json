@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "identifier": "cafe.como.desk",
   "build": {
-    "beforeDevCommand": "npm run dev",
+    "beforeDevCommand": "npm run build:tauri && npm run dev",
     "devUrl": "http://localhost:8080",
     "beforeBuildCommand": "npm run build:tauri",
     "frontendDist": "../.vercel/output/static"
