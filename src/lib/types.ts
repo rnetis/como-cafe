@@ -2,7 +2,7 @@ export type Lang = "fa" | "en";
 
 export type CategoryId = "hot-coffee" | "iced-coffee" | "brew" | "hot-drinks" | "mocktail";
 
-export type Pay = "cash" | "card" | "online";
+export type Pay = "cash" | "card" | "online" | "wallet";
 
 export type Unit = "g" | "ml" | "pcs";
 
@@ -93,6 +93,18 @@ export type Customer = {
   referredBy?: string;
   favoriteId?: string;
   giftYear: number;
+  walletBalance: number;
+};
+
+export type CustomerCreditMove = {
+  id: string;
+  at: number;
+  customerId: string;
+  amount: number;
+  kind: "topup" | "sale";
+  method?: "cash" | "card" | "transfer";
+  orderId?: string;
+  note: string;
 };
 
 export type ExpenseCategory = "rent" | "payroll" | "utilities" | "supplies" | "other";
@@ -143,6 +155,7 @@ export type CloseOut = {
   cash: number;
   card: number;
   online: number;
+  wallet: number;
   expenses: number;
   drawer: number;
   note: string;
@@ -180,6 +193,7 @@ export type DeskData = {
   expenses: Expense[];
   moves: StockMove[];
   cashMoves: CashMove[];
+  customerCreditMoves: CustomerCreditMove[];
   smsLogs: SmsLog[];
   closes: CloseOut[];
   settings: Settings;

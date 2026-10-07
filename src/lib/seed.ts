@@ -307,6 +307,7 @@ function buildCustomers(orders: Order[]): Customer[] {
       visits: prior.priorVisits + mine.length,
       spent: prior.priorSpent + mine.reduce((sum, order) => sum + order.total, 0),
       points: prior.priorPoints + mine.reduce((sum, order) => sum + order.pointsEarned, 0),
+      walletBalance: 0,
       lastVisit: prior.quiet ? atDays(prior.quiet, 16, 10) : lastFromOrders || prior.createdAt,
     };
   });
@@ -368,6 +369,7 @@ export function initialData(): DeskData {
     cashMoves: [
       { id: "cash-milk", at: Date.now() - day, amount: -1_400_000, note: "خرید شیر" },
     ],
+    customerCreditMoves: [],
     smsLogs: [],
     closes: [],
     settings,
@@ -384,6 +386,7 @@ export function snapshotOf(data: DeskData): DeskData {
     expenses: data.expenses,
     moves: data.moves,
     cashMoves: data.cashMoves,
+    customerCreditMoves: data.customerCreditMoves,
     smsLogs: data.smsLogs,
     closes: data.closes,
     settings: data.settings,

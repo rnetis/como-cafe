@@ -37,6 +37,7 @@ const PAUSES: Record<Lang, string[]> = {
 function payLabel(pay: Order["pay"], lang: Lang) {
   if (pay === "cash") return tx(lang, "نقد", "Cash");
   if (pay === "card") return tx(lang, "کارت", "Card");
+  if (pay === "wallet") return tx(lang, "اعتبار کومو", "Store credit");
   return tx(lang, "آنلاین", "Online");
 }
 

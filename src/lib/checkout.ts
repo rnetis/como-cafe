@@ -3,7 +3,7 @@ import { normPhone, uid, validPhone } from "./format";
 import { birthdaySoon, earnedPoints, inSlowHour, tierOf, tierRate } from "./loyalty";
 import type { CheckoutInput, DeskData, Order, OrderLine, StockItem } from "./types";
 
-export type CheckoutError = "empty" | "missing" | "phone" | "stock";
+export type CheckoutError = "empty" | "missing" | "phone" | "stock" | "wallet";
 
 export function applyCheckout(
   data: DeskData,
@@ -61,6 +61,9 @@ export function applyCheckout(
     if (existing) customer = existing;
     else creating = true;
   }
+  if (input.pay === "wallet" && (!customer || customer.walletBalance < 0)) {
+    return { ok: false, error: "wallet" };
+  }
 
   const now = Date.now();
   const year = new Date(now).getFullYear();
@@ -104,6 +107,7 @@ export function applyCheckout(
   }
 
   const total = Math.max(0, afterTier - pointsOff);
+  if (input.pay === "wallet" && customer!.walletBalance < total) return { ok: false, error: "wallet" };
   const cogs = orderLines.reduce((sum, line) => sum + line.unitCogs * line.qty, 0);
   const slow = inSlowHour(now, data.settings.slowStart, data.settings.slowEnd);
   const attached = Boolean(customer) || creating;
@@ -223,6 +227,7 @@ export function applyCheckout(
             points: pointsAfter,
             visits: entry.visits + 1,
             spent: entry.spent + total,
+            walletBalance: Math.max(0, entry.walletBalance - (input.pay === "wallet" ? total : 0)),
             lastVisit: now,
             favoriteId: entry.favoriteId || top?.itemId,
             giftYear: giftUsed ? year : entry.giftYear,
@@ -250,10 +255,15 @@ export function applyCheckout(
         referredBy: referrerId,
         favoriteId: top?.itemId,
         giftYear: 0,
+        walletBalance: 0,
       },
       ...customers,
     ];
   }
+
+  const customerCreditMoves = input.pay === "wallet" && customer
+    ? [{ id: uid("wallet"), at: now, customerId: customer.id, amount: -total, kind: "sale" as const, orderId: order.id, note: `#${number}` }, ...data.customerCreditMoves].slice(0, 1000)
+    : data.customerCreditMoves;
 
   return {
     ok: true,
@@ -264,6 +274,7 @@ export function applyCheckout(
       stock,
       moves,
       customers,
+      customerCreditMoves,
       orders: [order, ...data.orders].slice(0, 500),
     },
   };

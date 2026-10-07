@@ -4,6 +4,7 @@ import type {
   CategoryId,
   CloseOut,
   Customer,
+  CustomerCreditMove,
   DeskData,
   Expense,
   ExpenseCategory,
@@ -39,7 +40,7 @@ const SMS_CAP = 80;
 const CLOSES_CAP = 60;
 
 const CATEGORIES: CategoryId[] = ["hot-coffee", "iced-coffee", "brew", "hot-drinks", "mocktail"];
-const PAYS: Pay[] = ["cash", "card", "online"];
+const PAYS: Pay[] = ["cash", "card", "online", "wallet"];
 const UNITS: Unit[] = ["g", "ml", "pcs"];
 const REASONS: StockReason[] = ["sale", "purchase", "waste", "adjust"];
 const EXPENSE_CATS: ExpenseCategory[] = ["rent", "payroll", "utilities", "supplies", "other"];
@@ -137,6 +138,7 @@ function customers(raw: unknown): Customer[] {
       referredBy: typeof entry.referredBy === "string" ? entry.referredBy : undefined,
       favoriteId: typeof entry.favoriteId === "string" ? entry.favoriteId : undefined,
       giftYear: nonNegative(entry.giftYear),
+      walletBalance: nonNegative(entry.walletBalance),
     }))
     .slice(0, CUSTOMERS_CAP);
 }
@@ -238,6 +240,17 @@ function cashMoves(raw: unknown): CashMove[] {
     .slice(0, CASH_CAP);
 }
 
+function customerCreditMoves(raw: unknown): CustomerCreditMove[] {
+  return arr(raw).map(row).filter((entry): entry is Row => entry !== null && typeof entry.customerId === "string")
+    .map((entry) => ({
+      id: str(entry.id, "wallet-move"), at: epoch(entry.at), customerId: entry.customerId as string,
+      amount: num(entry.amount), kind: oneOf(entry.kind, ["topup", "sale"] as const, "topup"),
+      method: (entry.method === "cash" || entry.method === "card" || entry.method === "transfer" ? entry.method : undefined) as CustomerCreditMove["method"],
+      orderId: typeof entry.orderId === "string" ? entry.orderId : undefined,
+      note: str(entry.note).slice(0, 140),
+    })).slice(0, 1000);
+}
+
 function smsLogs(raw: unknown): SmsLog[] {
   return arr(raw)
     .map((entry) => row(entry))
@@ -265,6 +278,7 @@ function closes(raw: unknown): CloseOut[] {
       cash: nonNegative(entry.cash),
       card: nonNegative(entry.card),
       online: nonNegative(entry.online),
+      wallet: nonNegative(entry.wallet),
       expenses: nonNegative(entry.expenses),
       drawer: num(entry.drawer),
       note: str(entry.note),
@@ -316,6 +330,7 @@ export function sanitizeDeskData(raw: unknown): DeskData | null {
     expenses: expenses(data.expenses),
     moves: moves(data.moves),
     cashMoves: cashMoves(data.cashMoves),
+    customerCreditMoves: customerCreditMoves(data.customerCreditMoves),
     smsLogs: smsLogs(data.smsLogs),
     closes: closes(data.closes),
     settings: settings(data.settings),

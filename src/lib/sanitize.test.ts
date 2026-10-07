@@ -35,6 +35,7 @@ function validSnapshot(): DeskData {
         smsOptIn: true,
         referral: "C0001",
         giftYear: 0,
+        walletBalance: 0,
       },
     ],
     orders: [
@@ -73,6 +74,7 @@ function validSnapshot(): DeskData {
     expenses: [],
     moves: [],
     cashMoves: [],
+    customerCreditMoves: [],
     smsLogs: [],
     closes: [],
     settings: defaultSettings(),

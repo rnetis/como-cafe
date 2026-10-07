@@ -18,6 +18,7 @@ const payOptions: { id: Pay; fa: string; en: string }[] = [
   { id: "cash", fa: "نقد", en: "Cash" },
   { id: "card", fa: "کارت", en: "Card" },
   { id: "online", fa: "آنلاین", en: "Online" },
+  { id: "wallet", fa: "اعتبار مشتری", en: "Store credit" },
 ];
 
 function errorText(code: CheckoutError, lang: "fa" | "en") {
@@ -25,6 +26,7 @@ function errorText(code: CheckoutError, lang: "fa" | "en") {
   if (code === "phone") return tx(lang, "شماره موبایل درست نیست", "That mobile is not valid");
   if (code === "stock")
     return tx(lang, "موجودی مواد کافی نیست", "Not enough ingredient stock for this order");
+  if (code === "wallet") return tx(lang, "اعتبار مشتری کافی نیست", "Customer store credit is insufficient");
   return tx(lang, "یکی از آیتم‌ها تمام شده", "An item was 86’d");
 }
 
@@ -61,6 +63,7 @@ export function Pos() {
         .slice(0, 4)
     : [];
   const known = customers.find((entry) => entry.phone === normalized);
+  const walletCustomer = guest ?? known;
   const showNew = validPhone(phone) && !guest && !known;
 
   const q = query.trim().toLowerCase();
@@ -444,8 +447,9 @@ export function Pos() {
           <span>{tx(lang, "قابل پرداخت", "Due")}</span>
           <span>{formatToman(preview.total, lang)}</span>
         </div>
-        <div className="grid grid-cols-3 gap-1">
-          {payOptions.map((option) => (
+        {pay === "wallet" && walletCustomer ? <p className="text-xs text-mute">{tx(lang, "اعتبار موجود", "Available credit")}: {formatToman(walletCustomer.walletBalance, lang)}</p> : null}
+        <div className="grid grid-cols-2 gap-1 sm:grid-cols-4">
+          {payOptions.filter((option) => option.id !== "wallet" || Boolean(guest || known)).map((option) => (
             <button
               key={option.id}
               type="button"
@@ -459,7 +463,7 @@ export function Pos() {
             </button>
           ))}
         </div>
-        <Btn className="w-full" disabled={preview.lines.length === 0} onClick={() => void charge()}>
+        <Btn className="w-full" disabled={preview.lines.length === 0 || (pay === "wallet" && (!walletCustomer || walletCustomer.walletBalance < preview.total))} onClick={() => void charge()}>
           {tx(lang, "بستن فیش", "Close ticket")}
         </Btn>
       </div>

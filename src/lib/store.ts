@@ -9,6 +9,7 @@ import type {
   CashMove,
   CheckoutInput,
   Customer,
+  CustomerCreditMove,
   DeskData,
   Expense,
   MenuItem,
@@ -84,14 +85,15 @@ type Actions = {
   waste: (sku: string, qty: number, note: string) => boolean;
   setCount: (sku: string, next: number) => boolean;
   addExpense: (expense: Omit<Expense, "id" | "at">) => void;
-  patchCustomer: (id: string, patch: Partial<Customer>) => void;
+  patchCustomer: (id: string, patch: Partial<Customer>) => boolean;
   addCustomer: (input: {
     name: string;
     phone: string;
     birthday: string;
     notes: string;
   }) => string | "phone" | "bad";
-  removeCustomer: (id: string) => void;
+  removeCustomer: (id: string) => boolean;
+  addCustomerCredit: (id: string, amount: number, method: "cash" | "card" | "transfer", note: string) => boolean;
   logSms: (entry: Omit<SmsLog, "id" | "at">) => void;
   setCredit: (value: number) => void;
   closeDay: (note: string) => void;
@@ -289,17 +291,17 @@ export const useCafe = create<CafeStore>()(
             ...state.expenses,
           ].slice(0, 400),
         })),
-      patchCustomer: (id, patch) =>
-        set((state) => ({
-          customers: state.customers.map((entry) => {
-            if (entry.id !== id) return entry;
-            const phone = patch.phone ? normPhone(patch.phone) : entry.phone;
-            if (state.customers.some((other) => other.id !== id && other.phone === phone)) {
-              return entry;
-            }
-            return { ...entry, ...patch, phone };
-          }),
-        })),
+      patchCustomer: (id, patch) => {
+        const current = get().customers.find((entry) => entry.id === id);
+        if (!current) return false;
+        const phone = patch.phone === undefined ? current.phone : normPhone(patch.phone);
+        const name = patch.name === undefined ? current.name : patch.name.trim();
+        if (!name || (patch.phone !== undefined && !/^09\d{9}$/.test(phone))) return false;
+        if (patch.phone !== undefined && get().customers.some((other) => other.id !== id && other.phone === phone)) return false;
+        if (patch.points !== undefined && (!Number.isFinite(patch.points) || patch.points < 0)) return false;
+        set((state) => ({ customers: state.customers.map((entry) => entry.id === id ? { ...entry, ...patch, name, phone } : entry) }));
+        return true;
+      },
       addCustomer: (input) => {
         const phone = normPhone(input.phone);
         if (!/^09\d{9}$/.test(phone)) return "bad";
@@ -323,14 +325,32 @@ export const useCafe = create<CafeStore>()(
               smsOptIn: true,
               referral: `C${phone.slice(-4)}`,
               giftYear: 0,
+              walletBalance: 0,
             },
             ...state.customers,
           ],
         }));
         return id;
       },
-      removeCustomer: (id) =>
-        set((state) => ({ customers: state.customers.filter((entry) => entry.id !== id) })),
+      removeCustomer: (id) => {
+        const customer = get().customers.find((entry) => entry.id === id);
+        if (!customer || customer.walletBalance > 0 || get().orders.some((order) => order.customerId === id) || get().customerCreditMoves.some((move) => move.customerId === id)) return false;
+        set((state) => ({ customers: state.customers.filter((entry) => entry.id !== id) }));
+        return true;
+      },
+      addCustomerCredit: (id, amount, method, note) => {
+        if (!Number.isFinite(amount) || amount <= 0 || !["cash", "card", "transfer"].includes(method)) return false;
+        const customer = get().customers.find((entry) => entry.id === id);
+        if (!customer) return false;
+        const value = Math.round(amount);
+        const entry: CustomerCreditMove = { id: uid("wallet"), at: Date.now(), customerId: id, amount: value, kind: "topup", method, note: note.trim().slice(0, 140) || "Wallet top-up" };
+        set((state) => ({
+          customers: state.customers.map((item) => item.id === id ? { ...item, walletBalance: item.walletBalance + value } : item),
+          customerCreditMoves: [entry, ...state.customerCreditMoves].slice(0, 1000),
+          cashMoves: method === "cash" ? [ { id: uid("cash"), at: entry.at, amount: value, note: `${customer.name} · credit top-up` }, ...state.cashMoves ].slice(0, 300) : state.cashMoves,
+        }));
+        return true;
+      },
       logSms: (entry) =>
         set((state) => ({
           smsLogs: [{ ...entry, id: uid("sms"), at: Date.now() }, ...state.smsLogs].slice(0, 80),
@@ -357,6 +377,7 @@ export const useCafe = create<CafeStore>()(
                 online: today
                   .filter((order) => order.pay === "online")
                   .reduce((sum, order) => sum + order.total, 0),
+                wallet: today.filter((order) => order.pay === "wallet").reduce((sum, order) => sum + order.total, 0),
                 expenses,
                 drawer: expectedDrawer(snapshotOf(state)),
                 note: note.trim(),
@@ -399,6 +420,7 @@ export const useCafe = create<CafeStore>()(
         expenses: state.expenses,
         moves: state.moves,
         cashMoves: state.cashMoves,
+        customerCreditMoves: state.customerCreditMoves,
         smsLogs: state.smsLogs,
         closes: state.closes,
         settings: state.settings,
