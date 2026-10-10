@@ -7,6 +7,7 @@ import { cn } from "@/lib/cn";
 import type { CheckoutError } from "@/lib/checkout";
 import { formatMenu, formatToman, normPhone, tx, validPhone } from "@/lib/format";
 import { birthdaySoon, inSlowHour, tierName, tierOf, tierRate } from "@/lib/loyalty";
+import { pecCall } from "@/lib/pec.functions";
 import { buildReceiptDoc, printReceipt } from "@/lib/receipt";
 import { sendOut } from "@/lib/sms-send";
 import { useCafe } from "@/lib/store";
@@ -155,6 +156,48 @@ export function Pos() {
     const fresh = useCafe.getState();
     const placed = fresh.orders.find((order) => order.id === result.order.id) ?? result.order;
     const person = fresh.customers.find((entry) => entry.id === placed.customerId);
+
+    // Card charges go through the Parsian gateway when a PEC PIN is set: the
+    // transaction amount is sent as a Sale request (order number as OrderId),
+    // then the returned token is settled with a confirm call. No PIN → local
+    // card entry, exactly like before.
+    if (pay === "card" && fresh.settings.pecPin.trim()) {
+      if (!/^https?:\/\//i.test(fresh.settings.pecCallbackUrl.trim())) {
+        toast(tx(lang, "آدرس بازگشت درگاه را در تنظیمات بگذار", "Set the gateway callback URL in settings"));
+        return;
+      }
+      const sale = await pecCall({
+        data: {
+          op: "pay",
+          pin: fresh.settings.pecPin.trim(),
+          amount: placed.total,
+          orderId: placed.number,
+          callBackUrl: fresh.settings.pecCallbackUrl.trim(),
+          additionalData: `COMO ticket ${placed.number}`.slice(0, 255),
+        },
+      });
+      if (!sale.ok || sale.token == null) {
+        toast(tx(lang, `پرداخت پارسیان ناموفق: ${sale.message}`, `Parsian payment failed: ${sale.message}`));
+        return;
+      }
+      toast(tx(lang, "مبلغ به درگاه پارسیان ارسال شد", "Amount sent to the Parsian gateway"));
+      const confirm = await pecCall({
+        data: { op: "confirm", pin: fresh.settings.pecPin.trim(), token: sale.token },
+      });
+      if (!confirm.ok) {
+        toast(
+          tx(
+            lang,
+            `تسویه توکن ${sale.token} ناموفق: ${confirm.message}`,
+            `Settling token ${sale.token} failed: ${confirm.message}`,
+          ),
+        );
+        // Keep the ticket open so the operator can retry or reverse the token.
+        return;
+      }
+      toast(tx(lang, `تراکنش ${placed.number} در پارسیان تأیید شد`, `Ticket ${placed.number} confirmed with Parsian`));
+    }
+
     openReceipt(placed.id);
     if (fresh.settings.autoPrint) {
       printReceipt(buildReceiptDoc(placed, person, fresh.settings), fresh.settings.paper);

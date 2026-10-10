@@ -19,6 +19,8 @@ export function defaultSettings(): Settings {
     float: 5_000_000,
     smsApiKey: "",
     smsLine: "",
+    pecPin: "",
+    pecCallbackUrl: "",
     paper: 80,
     baud: 9600,
     autoPrint: false,

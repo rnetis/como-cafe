@@ -307,6 +307,8 @@ function settings(raw: unknown): Settings {
     float: num(patch.float, base.float),
     smsApiKey: str(patch.smsApiKey).slice(0, 200),
     smsLine: str(patch.smsLine).slice(0, 24),
+    pecPin: str(patch.pecPin).slice(0, 80),
+    pecCallbackUrl: str(patch.pecCallbackUrl).slice(0, 300),
     paper: patch.paper === 58 ? 58 : 80,
     baud: patch.baud === 115200 ? 115200 : 9600,
     autoPrint: bool(patch.autoPrint, base.autoPrint),

@@ -177,6 +177,8 @@ export type Settings = {
   float: number;
   smsApiKey: string;
   smsLine: string;
+  pecPin: string;
+  pecCallbackUrl: string;
   paper: 58 | 80;
   baud: 9600 | 115200;
   autoPrint: boolean;

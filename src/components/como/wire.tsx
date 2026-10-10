@@ -149,6 +149,43 @@ export function Wire() {
         </p>
       </div>
 
+      <h2 className="mt-8 text-lg font-medium">{tx(lang, "درگاه پارسیان (PEC)", "Parsian gateway (PEC)")}</h2>
+      <p className="mt-1 text-xs text-mute">
+        {tx(
+          lang,
+          "پرداخت‌های کارت به گیت‌وی پارسیان می‌روند: مبلغ هر تراکنش با درخواست Sale به pec.shaparak.ir فرستاده می‌شود و توکن پرداخت برمی‌گردد.",
+          "Card payments go through the Parsian gateway: each transaction amount is sent to pec.shaparak.ir as a Sale request and a payment token comes back.",
+        )}
+      </p>
+      <div className="mt-3 grid gap-3 border border-line bg-sheet p-4 md:grid-cols-2">
+        <Field label={tx(lang, "کلید پارسیان (PIN)", "PEC PIN")}>
+          <input
+            dir="ltr"
+            className={fieldClass}
+            type="password"
+            autoComplete="off"
+            value={settings.pecPin}
+            onChange={(event) => patchSettings({ pecPin: event.target.value })}
+          />
+        </Field>
+        <Field label={tx(lang, "آدرس بازگشت", "Callback URL")}>
+          <input
+            dir="ltr"
+            className={fieldClass}
+            placeholder="https://…/confirmPayment"
+            value={settings.pecCallbackUrl}
+            onChange={(event) => patchSettings({ pecCallbackUrl: event.target.value })}
+          />
+        </Field>
+        <p className="text-xs text-mute md:col-span-2">
+          {tx(
+            lang,
+            "بدون PIN، پرداخت کارت مستقیم ثبت می‌شود و به شاپرک نمی‌رود. کلید از سرور میز ارسال می‌شود تا در بسته مرورگر نباشد.",
+            "With no PIN, card charges register locally and never reach Shaparak. The PIN is sent from the desk server so it stays out of the browser bundle.",
+          )}
+        </p>
+      </div>
+
       <h2 className="mt-8 text-lg font-medium">{tx(lang, "جمع", "A round")}</h2>
       <div className="mt-3 flex flex-wrap gap-1">
         {(
