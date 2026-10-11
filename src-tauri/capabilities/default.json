@@ -3,5 +3,11 @@
   "identifier": "default",
   "description": "COMO Desk main window — core APIs only.",
   "windows": ["main"],
-  "permissions": ["core:default"]
+  "permissions": [
+    "core:default",
+    "core:event:default",
+    "core:event:allow-emit-lan-message",
+    "core:event:allow-emit-lan-clients",
+    "core:window:default"
+  ]
 }

@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "COMO Desk",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "identifier": "cafe.como.desk",
   "build": {
     "beforeDevCommand": "npm run build:tauri && npm run dev",
