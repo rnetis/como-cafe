@@ -6,8 +6,16 @@
   "permissions": [
     "core:default",
     "core:event:default",
-    "core:event:allow-emit-lan-message",
-    "core:event:allow-emit-lan-clients",
-    "core:window:default"
+    "core:event:allow-listen",
+    "core:event:allow-unlisten",
+    "core:event:allow-emit",
+    "core:event:allow-emit-to",
+    "core:window:default",
+    "core:window:allow-close",
+    "core:window:allow-set-title",
+    "core:window:allow-set-resizable",
+    "core:window:allow-set-size",
+    "core:window:allow-center",
+    "core:window:allow-set-focus"
   ]
 }
