@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { Btn, Field, fieldClass } from "@/components/como/bits";
 import { formatWhen, tx } from "@/lib/format";
 import { birthdaySoon, quietDays, tierOf } from "@/lib/loyalty";
+import { posCall, type PosResult } from "@/lib/pos.functions";
 import { smsCall } from "@/lib/sms.functions";
 import { sendOut } from "@/lib/sms-send";
 import { useCafe } from "@/lib/store";
@@ -30,6 +31,7 @@ export function Wire() {
   const [paramValue, setParamValue] = useState("1234");
   const [verifyMobile, setVerifyMobile] = useState("09120000001");
   const [busy, setBusy] = useState(false);
+  const [posTestNote, setPosTestNote] = useState("");
 
   const pool = customers.filter((guest) => {
     if (!guest.smsOptIn) return false;
@@ -66,6 +68,33 @@ export function Wire() {
     logSms({ to: outcome.to, body: outcome.body, kind: outcome.kind, status: outcome.status, detail: outcome.detail });
     setBusy(false);
     toast(outcome.status === "failed" ? outcome.detail : tx(lang, `${outcome.to.length} پیام ثبت شد`, `${outcome.to.length} kept`));
+  };
+
+  const posTest = async () => {
+    if (settings.posType === "LAN" && (!settings.posIp.trim() || !settings.posPort)) {
+      toast(tx(lang, "اول آی‌پی و پورت دستگاه را بگذار", "Add the device IP and port first"));
+      return;
+    }
+    if (settings.posType === "SERIAL" && !settings.posComPort.trim()) {
+      toast(tx(lang, "اول پورت سریال را بگذار", "Add the serial port first"));
+      return;
+    }
+    setBusy(true);
+    setPosTestNote("");
+    const result: PosResult = await posCall({
+      data: {
+        op: "test",
+        type: settings.posType,
+        ip: settings.posIp.trim() || undefined,
+        port: settings.posPort,
+        comPort: settings.posComPort.trim() || undefined,
+        timeoutMs: 5_000,
+      },
+    });
+    setBusy(false);
+    setPosTestNote(result.message);
+    if (result.ok) toast(result.message);
+    else toast(`${tx(lang, "اتصال ناموفق", "Connection failed")}: ${result.message}`);
   };
 
   const verify = async () => {
@@ -182,6 +211,80 @@ export function Wire() {
             lang,
             "بدون PIN، پرداخت کارت مستقیم ثبت می‌شود و به شاپرک نمی‌رود. کلید از سرور میز ارسال می‌شود تا در بسته مرورگر نباشد.",
             "With no PIN, card charges register locally and never reach Shaparak. The PIN is sent from the desk server so it stays out of the browser bundle.",
+          )}
+        </p>
+      </div>
+
+      <h2 className="mt-8 text-lg font-medium">{tx(lang, "دستگاه کارتخوان", "POS device")}</h2>
+      <p className="mt-1 text-xs text-mute">
+        {tx(
+          lang,
+          "کارتخوان فیزیکی پارسیان (PEC) از طریق پروتکل PCPOS: مبلغ هر فیش با دکمه «ارسال به دستگاه» در صندوق به دستگاه فرستاده می‌شود و پاسخ (کد، شماره پیگیری، شاپرک) برمی‌گردد.",
+          "A physical Parsian (PEC) terminal over the PCPOS protocol: a «Send to device» button in the POS sends each ticket amount to the terminal and a response (code, trace, RRN) comes back.",
+        )}
+      </p>
+      <div className="mt-3 grid gap-3 border border-line bg-sheet p-4 md:grid-cols-2">
+        <Field label={tx(lang, "نوع اتصال", "Connection type")}>
+          <select
+            className={fieldClass}
+            value={settings.posType}
+            onChange={(event) => patchSettings({ posType: event.target.value === "SERIAL" ? "SERIAL" : "LAN" })}
+          >
+            <option value="LAN">LAN</option>
+            <option value="SERIAL">SERIAL</option>
+          </select>
+        </Field>
+        {settings.posType === "LAN" ? (
+          <>
+            <Field label={tx(lang, "آی‌پی دستگاه", "Device IP")}>
+              <input
+                dir="ltr"
+                className={fieldClass}
+                placeholder="192.168.10.20"
+                value={settings.posIp}
+                onChange={(event) => patchSettings({ posIp: event.target.value.trim() })}
+              />
+            </Field>
+            <Field label={tx(lang, "پورت", "Port")}>
+              <input
+                dir="ltr"
+                type="number"
+                min={1}
+                max={65535}
+                className={fieldClass}
+                value={settings.posPort}
+                onChange={(event) => patchSettings({ posPort: Math.max(1, Math.min(65535, Math.round(Number(event.target.value) || 7020))) })}
+              />
+            </Field>
+          </>
+        ) : (
+          <Field label={tx(lang, "پورت سریال", "Serial (COM) port")}>
+            <input
+              dir="ltr"
+              className={fieldClass}
+              placeholder="COM3 / /dev/ttyUSB0"
+              value={settings.posComPort}
+              onChange={(event) => patchSettings({ posComPort: event.target.value })}
+            />
+          </Field>
+        )}
+        <div className="md:col-span-2 flex flex-wrap items-center gap-3">
+          <Btn
+            tone="line"
+            disabled={busy}
+            onClick={() =>
+              void posTest()
+            }
+          >
+            {busy ? tx(lang, "در حال آزمون…", "Testing…") : tx(lang, "آزمون اتصال", "Test connection")}
+          </Btn>
+          <span className="text-sm text-mute">{posTestNote}</span>
+        </div>
+        <p className="text-xs text-mute md:col-span-2">
+          {tx(
+            lang,
+            "اتصال از سرور میز برقرار می‌شود؛ مرورگر نمی‌تواند مستقیم به دستگاه یا پورت سریال دست بزند.",
+            "The connection runs from the desk server; a browser can never reach the terminal or a serial port directly.",
           )}
         </p>
       </div>

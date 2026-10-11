@@ -8,6 +8,7 @@ import type { CheckoutError } from "@/lib/checkout";
 import { formatMenu, formatToman, normPhone, tx, validPhone } from "@/lib/format";
 import { birthdaySoon, inSlowHour, tierName, tierOf, tierRate } from "@/lib/loyalty";
 import { pecCall } from "@/lib/pec.functions";
+import { posCall, type PosResult } from "@/lib/pos.functions";
 import { buildReceiptDoc, printReceipt } from "@/lib/receipt";
 import { sendOut } from "@/lib/sms-send";
 import { useCafe } from "@/lib/store";
@@ -55,6 +56,7 @@ export function Pos() {
   const [points, setPoints] = useState(0);
   const [note, setNote] = useState("");
   const [open, setOpen] = useState(false);
+  const [sendToDevice, setSendToDevice] = useState(true);
 
   const guest = customers.find((entry) => entry.id === customerId);
   const normalized = normPhone(phone);
@@ -157,7 +159,46 @@ export function Pos() {
     const placed = fresh.orders.find((order) => order.id === result.order.id) ?? result.order;
     const person = fresh.customers.find((entry) => entry.id === placed.customerId);
 
-    // Card charges go through the Parsian gateway when a PEC PIN is set: the
+    // «ارسال به دستگاه»: push the ticket amount to the physical PEC terminal
+    // over the PCPOS protocol (LAN TCP or serial), then only finish the close
+    // when the device answers 00. Failure keeps the just-placed ticket visible
+    // so the operator can retry or void it on the terminal itself.
+    if (sendToDevice) {
+      const device =
+        fresh.settings.posType === "LAN"
+          ? { ip: fresh.settings.posIp.trim(), port: fresh.settings.posPort }
+          : { comPort: fresh.settings.posComPort.trim() };
+      const sent: PosResult = await posCall({
+        data: {
+          op: "pay",
+          amount: placed.total,
+          type: fresh.settings.posType,
+          ...device,
+          merchantTitle: `COMO ${placed.number}`.slice(0, 40),
+        },
+      });
+      if (!sent.ok || sent.responseCode !== "00") {
+        toast(
+          tx(
+            lang,
+            `دستگاه پاسخ نداد یا خطا داشت: ${sent.message}`,
+            `Device did not accept the charge: ${sent.message}`,
+          ),
+        );
+        return;
+      }
+      const d = sent.data ?? {};
+      toast(
+        tx(
+          lang,
+          `دستگاه تأیید کرد · کد ${d.responseCode ?? "00"} · پیگیری ${d.traceId ?? "—"} · شاپرک ${d.rrn ?? "—"}`,
+          `Device approved · code ${d.responseCode ?? "00"} · trace ${d.traceId ?? "—"} · RRN ${d.rrn ?? "—"}`,
+        ),
+      );
+    }
+
+    // Card charges otherwise go through the Parsian gateway when a PEC PIN is
+    // set: the
     // transaction amount is sent as a Sale request (order number as OrderId),
     // then the returned token is settled with a confirm call. No PIN → local
     // card entry, exactly like before.
@@ -506,8 +547,24 @@ export function Pos() {
             </button>
           ))}
         </div>
+        {pay === "card" || pay === "online" ? (
+          <button
+            type="button"
+            onClick={() => setSendToDevice((value) => !value)}
+            className={cn(
+              "h-11 w-full text-sm",
+              sendToDevice ? "bg-stamp text-paper" : "border border-line",
+            )}
+          >
+            {tx(
+              lang,
+              `ارسال به دستگاه ← ${settings.posType === "LAN" ? `${settings.posIp || "؟"}:${settings.posPort}` : settings.posComPort || "؟"}`,
+              `Send to device ← ${settings.posType === "LAN" ? `${settings.posIp || "?"}:${settings.posPort}` : settings.posComPort || "?"}`,
+            )}
+          </button>
+        ) : null}
         <Btn className="w-full" disabled={preview.lines.length === 0 || (pay === "wallet" && (!walletCustomer || walletCustomer.walletBalance < preview.total))} onClick={() => void charge()}>
-          {tx(lang, "بستن فیش", "Close ticket")}
+          {pay === "card" || pay === "online" ? (sendToDevice ? tx(lang, "بستن فیش و ارسال مبلغ به دستگاه", "Close ticket & send amount to device") : tx(lang, "بستن فیش", "Close ticket")) : tx(lang, "بستن فیش", "Close ticket")}
         </Btn>
       </div>
     </div>
