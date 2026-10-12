@@ -54,6 +54,11 @@ export function buildReceiptDoc(order: Order, customer: Customer | undefined, se
 
   const loyaltyBits: string[] = [];
   if (order.guestName) loyaltyBits.push(order.guestName);
+  if (order.status === "open") {
+    loyaltyBits.push(
+      tx(lang, "فیش باز است — مهر و امتیاز هنگام بستن ثبت می‌شود", "Open tab — loyalty lands when it closes"),
+    );
+  }
   if (order.pointsEarned) {
     loyaltyBits.push(tx(lang, `${order.pointsEarned} امتیاز این فیش`, `${order.pointsEarned} pts`));
   }
@@ -72,7 +77,7 @@ export function buildReceiptDoc(order: Order, customer: Customer | undefined, se
   if (typeof order.pointsAfter === "number") {
     loyaltyBits.push(tx(lang, `مانده امتیاز ${order.pointsAfter}`, `${order.pointsAfter} pts left`));
   }
-  if (!order.guestName) {
+  if (!order.guestName && order.status === "closed") {
     loyaltyBits.push(tx(lang, "بدون مهر — شماره نگرفتیم", "No stamp — no number"));
   }
 
@@ -100,7 +105,11 @@ export function buildReceiptDoc(order: Order, customer: Customer | undefined, se
     rows,
     totalLabel: tx(lang, "قابل پرداخت", "Due"),
     total: formatToman(order.total, lang),
-    pay: payLabel(order.pay, lang),
+    // An open tab prints as a running bill, not as a receipt for money taken.
+    pay:
+      order.status === "open"
+        ? tx(lang, "فیش باز — هنوز تسویه نشده", "Open ticket — not settled yet")
+        : payLabel(order.pay, lang),
     note: order.note,
     pause,
     loyalty: loyaltyBits.join(" · "),

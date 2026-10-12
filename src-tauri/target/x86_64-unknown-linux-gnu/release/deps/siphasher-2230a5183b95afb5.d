@@ -1,0 +1,11 @@
+/home/rayan/como-cafe/src-tauri/target/x86_64-unknown-linux-gnu/release/deps/siphasher-2230a5183b95afb5.d: /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/siphasher-1.0.4/src/lib.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/siphasher-1.0.4/src/common.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/siphasher-1.0.4/src/sip.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/siphasher-1.0.4/src/sip128.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/siphasher-1.0.4/src/../README.md
+
+/home/rayan/como-cafe/src-tauri/target/x86_64-unknown-linux-gnu/release/deps/libsiphasher-2230a5183b95afb5.rlib: /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/siphasher-1.0.4/src/lib.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/siphasher-1.0.4/src/common.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/siphasher-1.0.4/src/sip.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/siphasher-1.0.4/src/sip128.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/siphasher-1.0.4/src/../README.md
+
+/home/rayan/como-cafe/src-tauri/target/x86_64-unknown-linux-gnu/release/deps/libsiphasher-2230a5183b95afb5.rmeta: /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/siphasher-1.0.4/src/lib.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/siphasher-1.0.4/src/common.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/siphasher-1.0.4/src/sip.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/siphasher-1.0.4/src/sip128.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/siphasher-1.0.4/src/../README.md
+
+/home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/siphasher-1.0.4/src/lib.rs:
+/home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/siphasher-1.0.4/src/common.rs:
+/home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/siphasher-1.0.4/src/sip.rs:
+/home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/siphasher-1.0.4/src/sip128.rs:
+/home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/siphasher-1.0.4/src/../README.md:

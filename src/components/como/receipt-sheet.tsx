@@ -56,7 +56,7 @@ export function ReceiptSheet() {
   const serial = async () => {
     setBusy(true);
     try {
-      const bytes = await receiptBytes(doc, settings.paper, order.pay === "cash");
+      const bytes = await receiptBytes(doc, settings.paper, order.status === "closed" && order.pay === "cash");
       await sendToPrinter(bytes, settings.baud);
       toast(tx(lang, "به چاپگر حرارتی رفت", "Sent to the thermal printer"));
     } catch (error) {
@@ -119,6 +119,15 @@ export function ReceiptSheet() {
           <p className="mt-3 text-center font-display text-lg italic">{doc.pause}</p>
           <p className="mt-2 text-center text-xs tracking-widest text-mute">EST. 2026</p>
         </article>
+          {order.status === "open" ? (
+            <p className="mt-3 border border-stamp px-3 py-2 text-xs text-stamp">
+              {tx(
+                lang,
+                "این فیش باز است. چاپ، پیش‌فیش است و پول را از کشو نمی‌برد.",
+                "This ticket is open — it prints a running bill and never kicks the drawer.",
+              )}
+            </p>
+          ) : null}
           {!serialAvailable() ? (
             <p className="mt-3 text-xs text-mute">
               {tx(
@@ -142,7 +151,7 @@ export function ReceiptSheet() {
             tone="line"
             disabled={busy}
             onClick={() => {
-              void receiptBytes(doc, settings.paper, order.pay === "cash").then((bytes) =>
+              void receiptBytes(doc, settings.paper, order.status === "closed" && order.pay === "cash").then((bytes) =>
                 downloadBytes(bytes, `como-${order.number}.bin`),
               );
             }}

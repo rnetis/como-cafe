@@ -55,9 +55,11 @@ export function Desk() {
     return () => window.clearInterval(timer);
   }, []);
 
+  // An open tab is not today's money yet — only closed tickets count.
   const today = orders
-    .filter((order) => order.at >= startOfDay(now))
+    .filter((order) => order.status === "closed" && order.at >= startOfDay(now))
     .reduce((sum, order) => sum + order.total, 0);
+  const openTickets = orders.filter((order) => order.status === "open").length;
   const low = stock.some((item) => item.onHand < item.par);
   const birthdays = customers.some((guest) => birthdaySoon(guest.birthday));
   const slow = inSlowHour(now, settings.slowStart, settings.slowEnd);
@@ -93,7 +95,11 @@ export function Desk() {
               active={view === item.id}
               label={tx(lang, item.fa, item.en)}
               icon={item.icon}
-              alert={(item.id === "cellar" && low) || (item.id === "guests" && birthdays)}
+              alert={
+                (item.id === "cellar" && low) ||
+                (item.id === "guests" && birthdays) ||
+                (item.id === "tickets" && openTickets > 0)
+              }
               onClick={() => setView(item.id)}
             />
           ))}
@@ -145,7 +151,9 @@ export function Desk() {
           >
             <item.icon className="size-5" strokeWidth={1.5} />
             {tx(lang, item.fa, item.en)}
-            {(item.id === "cellar" && low) || (item.id === "guests" && birthdays) ? (
+            {(item.id === "cellar" && low) ||
+            (item.id === "guests" && birthdays) ||
+            (item.id === "tickets" && openTickets > 0) ? (
               <span className="absolute top-2 size-1.5 rounded-full bg-stamp" />
             ) : null}
           </button>

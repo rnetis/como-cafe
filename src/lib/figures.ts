@@ -1,5 +1,5 @@
-import { startOfDay } from "./format";
-import type { DeskData } from "./types";
+import { startOfDay } from "./format.ts";
+import type { DeskData } from "./types.ts";
 
 export type RangeKey = "today" | "d7" | "d30";
 
@@ -10,8 +10,9 @@ export function inRange(ts: number, range: RangeKey, now = Date.now()) {
 }
 
 export function expectedDrawer(data: DeskData) {
+  // Only closed tickets are money: an open tab has not been paid yet.
   const cashSales = data.orders
-    .filter((order) => order.pay === "cash")
+    .filter((order) => order.status === "closed" && order.pay === "cash")
     .reduce((sum, order) => sum + order.total, 0);
   const cashExp = data.expenses
     .filter((expense) => expense.method === "cash")

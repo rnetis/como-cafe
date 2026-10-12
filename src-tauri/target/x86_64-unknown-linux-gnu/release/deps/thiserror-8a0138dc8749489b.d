@@ -1,0 +1,14 @@
+/home/rayan/como-cafe/src-tauri/target/x86_64-unknown-linux-gnu/release/deps/thiserror-8a0138dc8749489b.d: /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.21/src/lib.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.21/src/aserror.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.21/src/display.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.21/src/var.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.21/src/private.rs /home/rayan/como-cafe/src-tauri/target/x86_64-unknown-linux-gnu/release/build/thiserror-df777affb2a85d6e/out/private.rs
+
+/home/rayan/como-cafe/src-tauri/target/x86_64-unknown-linux-gnu/release/deps/libthiserror-8a0138dc8749489b.rlib: /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.21/src/lib.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.21/src/aserror.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.21/src/display.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.21/src/var.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.21/src/private.rs /home/rayan/como-cafe/src-tauri/target/x86_64-unknown-linux-gnu/release/build/thiserror-df777affb2a85d6e/out/private.rs
+
+/home/rayan/como-cafe/src-tauri/target/x86_64-unknown-linux-gnu/release/deps/libthiserror-8a0138dc8749489b.rmeta: /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.21/src/lib.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.21/src/aserror.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.21/src/display.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.21/src/var.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.21/src/private.rs /home/rayan/como-cafe/src-tauri/target/x86_64-unknown-linux-gnu/release/build/thiserror-df777affb2a85d6e/out/private.rs
+
+/home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.21/src/lib.rs:
+/home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.21/src/aserror.rs:
+/home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.21/src/display.rs:
+/home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.21/src/var.rs:
+/home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/thiserror-2.0.21/src/private.rs:
+/home/rayan/como-cafe/src-tauri/target/x86_64-unknown-linux-gnu/release/build/thiserror-df777affb2a85d6e/out/private.rs:
+
+# env-dep:OUT_DIR=/home/rayan/como-cafe/src-tauri/target/x86_64-unknown-linux-gnu/release/build/thiserror-df777affb2a85d6e/out

@@ -30,7 +30,9 @@ export function Books() {
   const [method, setMethod] = useState<"cash" | "card" | "transfer">("cash");
   const [closeNote, setCloseNote] = useState("");
 
-  const orders = data.orders.filter((order) => inRange(order.at, range));
+  // Open tabs are not sales yet — the books only count closed tickets.
+  const closed = data.orders.filter((order) => order.status === "closed");
+  const orders = closed.filter((order) => inRange(order.at, range));
   const expenses = data.expenses.filter((expense) => inRange(expense.at, range));
   const sales = orders.reduce((sum, order) => sum + order.total, 0);
   const cogs = orders.reduce((sum, order) => sum + order.cogs, 0);
@@ -42,12 +44,13 @@ export function Books() {
   const days = range === "today" ? 1 : range === "d7" ? 7 : 30;
   const series = Array.from({ length: days }, (_, index) => {
     const start = startOfDay(Date.now() - (days - 1 - index) * 86_400_000);
-    const total = data.orders
+    const total = closed
       .filter((order) => order.at >= start && order.at < start + 86_400_000)
       .reduce((sum, order) => sum + order.total, 0);
     return { label: formatDay(start, lang), total };
   });
   const drawer = expectedDrawer(data);
+  const open = data.orders.filter((order) => order.status === "open");
 
   return (
     <div>
@@ -89,6 +92,16 @@ export function Books() {
       <p className="mt-3 text-sm">
         {tx(lang, "صندوق مورد انتظار", "Expected drawer")}: <span className="font-medium">{formatToman(drawer, lang)}</span>
       </p>
+      {open.length > 0 ? (
+        <p className="mt-2 text-sm text-mute">
+          {tx(lang, "فیش‌های باز", "Open tickets")}: {open.length} ·{" "}
+          {formatCompact(
+            open.reduce((sum, order) => sum + order.total, 0),
+            lang,
+          )}{" "}
+          {tx(lang, "— تا بسته نشوند فروش نیست", "— not sales until they close")}
+        </p>
+      ) : null}
       <p className="mt-1 max-w-xl text-xs text-mute">
         {tx(
           lang,

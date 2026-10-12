@@ -50,10 +50,21 @@ export type OrderLine = {
   mods: LineMod[];
 };
 
+/**
+ * A ticket lives open until it is closed. An open ticket is a tab: lines can
+ * be added, changed or removed, nothing touches stock or loyalty yet, and the
+ * books ignore it. Closing it is the sale: stock comes out, loyalty lands, the
+ * money counts. Closed tickets are records — only the note and guest name can
+ * still be edited.
+ */
+export type OrderStatus = "open" | "closed";
+
 export type Order = {
   id: string;
   number: number;
+  status: OrderStatus;
   at: number;
+  closedAt?: number;
   lines: OrderLine[];
   subtotal: number;
   manualOff: number;
@@ -219,3 +230,19 @@ export type CheckoutInput = {
   useGift: boolean;
   redeemPoints: number;
 };
+
+/** What opens a ticket — the same line shape the register rings up. */
+export type TicketInput = {
+  lines: { itemId: string; qty: number; mods: string[] }[];
+  customerId?: string;
+  guestName?: string;
+  note: string;
+};
+
+/** What settles a ticket: a full CheckoutInput minus the lines, which the
+ *  open ticket already carries, and minus the customer, who rode in with the
+ *  ticket. */
+export type TicketCloseInput = Omit<
+  CheckoutInput,
+  "lines" | "newName" | "newPhone" | "referralCode" | "customerId" | "note"
+> & { note?: string };

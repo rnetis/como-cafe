@@ -1,17 +1,25 @@
-import { MODS, recipeCost } from "./catalog";
-import { normPhone, uid, validPhone } from "./format";
-import { birthdaySoon, earnedPoints, inSlowHour, tierOf, tierRate } from "./loyalty";
-import type { CheckoutInput, DeskData, Order, OrderLine, StockItem } from "./types";
+import { MODS, recipeCost } from "./catalog.ts";
+import { normPhone, uid, validPhone } from "./format.ts";
+import { birthdaySoon, earnedPoints, inSlowHour, tierOf, tierRate } from "./loyalty.ts";
+import type { CheckoutInput, DeskData, Order, OrderLine, StockItem } from "./types.ts";
 
 export type CheckoutError = "empty" | "missing" | "phone" | "stock" | "wallet";
 
-export function applyCheckout(
+type LineInput = { itemId: string; qty: number; mods: string[] };
+
+/**
+ * The one place ticket lines become priced `OrderLine`s: quantity clamps,
+ * active-menu lookups, mod prices and recipe cost. The register, the LAN and
+ * open tickets all price through here, so a tab bills at the same prices a
+ * direct sale would.
+ */
+export function priceLines(
   data: DeskData,
-  input: CheckoutInput,
+  input: LineInput[],
 ):
-  | { ok: true; data: DeskData; order: Order; warnings: string[] }
-  | { ok: false; error: CheckoutError } {
-  const linesIn = input.lines
+  | { ok: true; linesIn: LineInput[]; orderLines: OrderLine[]; subtotal: number }
+  | { ok: false; error: "empty" | "missing" } {
+  const linesIn = input
     .filter((line) => Number.isFinite(line.qty) && line.qty > 0)
     .map((line) => ({ ...line, qty: Math.min(99, Math.floor(line.qty)) }))
     .filter((line) => line.qty > 0);
@@ -44,7 +52,23 @@ export function applyCheckout(
     });
   }
 
-  const subtotal = orderLines.reduce((sum, line) => sum + line.unitPrice * line.qty, 0);
+  return {
+    ok: true,
+    linesIn,
+    orderLines,
+    subtotal: orderLines.reduce((sum, line) => sum + line.unitPrice * line.qty, 0),
+  };
+}
+
+export function applyCheckout(
+  data: DeskData,
+  input: CheckoutInput,
+):
+  | { ok: true; data: DeskData; order: Order; warnings: string[] }
+  | { ok: false; error: CheckoutError } {
+  const priced = priceLines(data, input.lines);
+  if (!priced.ok) return priced;
+  const { linesIn, orderLines, subtotal } = priced;
   const pct = Math.min(100, Math.max(0, input.discountPct || 0));
   const manualOff = Math.round((subtotal * pct) / 100);
   const cheapest = orderLines.reduce((min, line) => Math.min(min, line.unitPrice), subtotal);
@@ -143,7 +167,9 @@ export function applyCheckout(
   const order: Order = {
     id: uid("ord"),
     number,
+    status: "closed",
     at: now,
+    closedAt: now,
     lines: orderLines,
     subtotal,
     manualOff,

@@ -1,0 +1,1 @@
+cargo:rustc-env=MIME_TYPES_GENERATED_PATH=/home/rayan/como-cafe/src-tauri/target/x86_64-unknown-linux-gnu/release/build/mime_guess-3d9dcab1d0d24189/out/mime_types_generated.rs

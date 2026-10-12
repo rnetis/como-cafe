@@ -103,7 +103,7 @@ var HEADERS = { TSS_SHELL: "X-TSS_SHELL" };
 * the dev styles URL for route-scoped CSS collection.
 */
 async function getStartManifest(matchedRoutes) {
-	const { tsrStartManifest } = await import("../_tanstack-start-manifest_v-CjEk3XTT.mjs");
+	const { tsrStartManifest } = await import("../_tanstack-start-manifest_v-CROBWZ7B.mjs");
 	const startManifest = tsrStartManifest();
 	let routes = startManifest.routes;
 	routes[rootRouteId];
@@ -122,10 +122,20 @@ async function getStartManifest(matchedRoutes) {
 		routes: manifestRoutes
 	};
 }
-var manifest = { "e30f1603d2cce39df55cacd4e6a5818bbf027e98dc7f356848295be47b57cfe6": {
-	functionName: "smsCall_createServerFn_handler",
-	importer: () => import("./sms.functions-UTq5pi_l.mjs")
-} };
+var manifest = {
+	"7cacdf542a79a5292788a4d4cd901f37137cff2a26622bda61e13e4a20f19433": {
+		functionName: "posCall_createServerFn_handler",
+		importer: () => import("./pos.functions-Cm5iFcb7.mjs")
+	},
+	"a5a9cd36b936e7c4ecd3c9fd70d988609beda37bd6debdec3726e8aa25f93159": {
+		functionName: "pecCall_createServerFn_handler",
+		importer: () => import("./pec.functions-s0kIZ_mi.mjs")
+	},
+	"e30f1603d2cce39df55cacd4e6a5818bbf027e98dc7f356848295be47b57cfe6": {
+		functionName: "smsCall_createServerFn_handler",
+		importer: () => import("./sms.functions-D-5LcRxq.mjs")
+	}
+};
 async function getServerFnById(id, access) {
 	const serverFnInfo = manifest[id];
 	if (!serverFnInfo) throw new Error("Server function info not found for " + id);
@@ -302,7 +312,8 @@ function createMultiplexedStream(recordStream, options = {}) {
 				if (!(value instanceof Uint8Array)) throw new TypeError("RawStream chunks must be Uint8Array");
 				let offset = 0;
 				do {
-					const frameAdmission = admitFrame(1, streamId, value.byteLength <= 16777216 ? value : value.subarray(offset, offset + MAX_FRAME_PAYLOAD_SIZE));
+					const chunk = value.byteLength <= 16777216 ? value : value.subarray(offset, offset + MAX_FRAME_PAYLOAD_SIZE);
+					const frameAdmission = admitFrame(1, streamId, chunk);
 					if (frameAdmission !== true && (frameAdmission === false || !await frameAdmission)) return;
 					offset += MAX_FRAME_PAYLOAD_SIZE;
 				} while (offset < value.byteLength);
@@ -445,14 +456,15 @@ var createServerFn = (options, __opts) => {
 				__executeServer: async (opts) => {
 					const startContext = getStartContextServerOnly();
 					const serverContextAfterGlobalMiddlewares = startContext.contextAfterGlobalMiddlewares;
-					return await executeMiddleware$1(resolvedMiddleware, "server", {
+					const ctx = {
 						...extractedFn,
 						data: opts.data,
 						method: opts.method ?? resolvedOptions.method,
 						serverFnMeta: extractedFn.serverFnMeta,
 						context: safeObjectMerge(opts.context, serverContextAfterGlobalMiddlewares),
 						request: startContext.request
-					}).then((d) => ({
+					};
+					return await executeMiddleware$1(resolvedMiddleware, "server", ctx).then((d) => ({
 						result: d.result,
 						error: d.error,
 						context: d.sendContext
@@ -488,7 +500,7 @@ async function executeMiddleware$1(middlewares, env, opts) {
 			} else if ("server" in nextMiddleware.options) middlewareFn = nextMiddleware.options.server;
 			if (middlewareFn) {
 				const userNext = async (userCtx = {}) => {
-					const result = await callNextMiddleware({
+					const nextCtx = {
 						...ctx,
 						...userCtx,
 						context: safeObjectMerge(ctx.context, userCtx.context),
@@ -498,7 +510,8 @@ async function executeMiddleware$1(middlewares, env, opts) {
 						fetch: ctx._callSiteFetch ?? userCtx.fetch ?? ctx.fetch,
 						result: userCtx.result !== void 0 ? userCtx.result : userCtx instanceof Response ? userCtx : ctx.result,
 						error: userCtx.error ?? ctx.error
-					});
+					};
+					const result = await callNextMiddleware(nextCtx);
 					if (result.error) throw result.error;
 					return result;
 				};
@@ -706,7 +719,8 @@ var handleServerAction = async ({ request, context, serverFnId }) => {
 				method: methodUpper
 			};
 			if (typeof serializedContext === "string") try {
-				const deserializedContext = fromJSON(JSON.parse(serializedContext), { plugins: serovalPlugins });
+				const parsedContext = JSON.parse(serializedContext);
+				const deserializedContext = fromJSON(parsedContext, { plugins: serovalPlugins });
 				if (typeof deserializedContext === "object" && deserializedContext) params.context = safeObjectMerge(deserializedContext, context);
 			} catch (e) {}
 			res = await action(params);
@@ -1322,7 +1336,8 @@ async function transformManifestAssets(source, transformFn, _opts) {
 	else if (manifest.inlineCss) manifest.inlineCss = await transformInlineCssStyles(manifest.inlineCss, transformFn);
 	for (const route of Object.values(manifest.routes)) {
 		if (route.preloads?.length) route.preloads = await Promise.all(route.preloads.map(async (link) => {
-			const result = await transformScript(resolveManifestAssetLink(link).href);
+			const resolved = resolveManifestAssetLink(link);
+			const result = await transformScript(resolved.href);
 			return assignManifestLink(link, {
 				href: result.href,
 				crossOrigin: result.crossOrigin
@@ -1528,7 +1543,7 @@ var getBaseManifest = getProdBaseManifest;
 var createEarlyHintsForRequest = createEarlyHintsCollector;
 async function loadEntries() {
 	const [routerEntry, startEntry, pluginAdapters] = await Promise.all([
-		import("./router-B53nzaDa.mjs").then((n) => n.t),
+		import("./router-EgfwbZUm.mjs").then((n) => n.t),
 		import("./start-5Z2QO8AU.mjs"),
 		import("./empty-plugin-adapters-D9UWiqvJ.mjs")
 	]);
@@ -1848,11 +1863,12 @@ function createStartHandler(cbOrOptions) {
 					earlyHints?.appendResponseHeaders(responseHeaders);
 					signal.throwIfAborted();
 					const disposeLate = createLateResponseDisposer(signal);
-					return normalizeSsrResponse(await waitForReason(cb({
+					const response = await waitForReason(cb({
 						request,
 						router: routerInstance,
 						responseHeaders
-					}), signal, disposeLate, disposeLate));
+					}), signal, disposeLate, disposeLate);
+					return normalizeSsrResponse(response);
 				};
 				terminal = ({ context }) => runWithStartContext({
 					...startContext,
@@ -1977,13 +1993,14 @@ async function handleServerRoutes({ getRouter, request, url, executeRouter, cont
 			}
 		}
 	}
-	return normalizeSsrResponse(await executeMiddleware(routeMiddlewares, terminalHandler, {
+	const response = await executeMiddleware(routeMiddlewares, terminalHandler, {
 		request,
 		context,
 		params: rawParams,
 		pathname,
 		handlerType: "router"
-	}, request.signal, terminalNext));
+	}, request.signal, terminalNext);
+	return normalizeSsrResponse(response);
 }
 var fetch = createStartHandler(defaultStreamHandler);
 function createServerEntry(entry) {

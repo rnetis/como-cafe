@@ -32,8 +32,12 @@ export function Remote() {
 
   const lang: Lang = snapshot?.settings.lang ?? "fa";
   const now = Date.now();
+  // Today's money means today's closed tickets; an open tab is still running.
   const todayOrders = useMemo(
-    () => (snapshot?.orders ?? []).filter((order) => order.at >= startOfDay(now)),
+    () =>
+      (snapshot?.orders ?? []).filter(
+        (order) => order.status === "closed" && order.at >= startOfDay(now),
+      ),
     [snapshot, now],
   );
   const todaySales = todayOrders.reduce((sum, order) => sum + order.total, 0);
@@ -196,6 +200,9 @@ export function Remote() {
               <span>
                 #{order.number}
                 <span className="ms-2 text-xs text-mute">{formatWhen(order.at, lang)}</span>
+                {order.status === "open" ? (
+                  <span className="ms-2 text-xs">{tx(lang, "باز", "open")}</span>
+                ) : null}
               </span>
               <span>{formatCompact(order.total, lang)}</span>
             </li>

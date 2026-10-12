@@ -1,0 +1,11 @@
+/home/rayan/como-cafe/src-tauri/target/x86_64-unknown-linux-gnu/release/deps/include_dir-d8aed4d06b8a9b88.d: /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/include_dir-0.7.4/src/lib.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/include_dir-0.7.4/src/dir.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/include_dir-0.7.4/src/dir_entry.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/include_dir-0.7.4/src/file.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/include_dir-0.7.4/src/../README.md
+
+/home/rayan/como-cafe/src-tauri/target/x86_64-unknown-linux-gnu/release/deps/libinclude_dir-d8aed4d06b8a9b88.rlib: /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/include_dir-0.7.4/src/lib.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/include_dir-0.7.4/src/dir.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/include_dir-0.7.4/src/dir_entry.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/include_dir-0.7.4/src/file.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/include_dir-0.7.4/src/../README.md
+
+/home/rayan/como-cafe/src-tauri/target/x86_64-unknown-linux-gnu/release/deps/libinclude_dir-d8aed4d06b8a9b88.rmeta: /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/include_dir-0.7.4/src/lib.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/include_dir-0.7.4/src/dir.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/include_dir-0.7.4/src/dir_entry.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/include_dir-0.7.4/src/file.rs /home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/include_dir-0.7.4/src/../README.md
+
+/home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/include_dir-0.7.4/src/lib.rs:
+/home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/include_dir-0.7.4/src/dir.rs:
+/home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/include_dir-0.7.4/src/dir_entry.rs:
+/home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/include_dir-0.7.4/src/file.rs:
+/home/rayan/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/include_dir-0.7.4/src/../README.md:

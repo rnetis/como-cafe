@@ -42,7 +42,9 @@ function validSnapshot(): DeskData {
       {
         id: "ord-1",
         number: 12,
+        status: "closed",
         at: 1_700_000_000_000,
+        closedAt: 1_700_000_000_000,
         lines: [
           {
             itemId: "item-1",
@@ -168,6 +170,22 @@ describe("sanitizeDeskData", () => {
     assert.equal(guest.referral, "7");
     assert.equal(out.credit?.value, 250);
     assert.ok(out.credit && out.credit.at > 0);
+  });
+
+  it("keeps open tickets open and defaults old saves to closed", () => {
+    const out = sanitizeDeskData({
+      menu: [],
+      orders: [
+        { id: "ord-open", status: "open", total: 100 },
+        { id: "ord-legacy", total: 50 },
+        { id: "ord-weird", status: "void", total: 50 },
+      ],
+    });
+    assert.ok(out);
+    assert.equal(out.orders[0]?.status, "open");
+    assert.equal(out.orders[0]?.closedAt, undefined);
+    assert.equal(out.orders[1]?.status, "closed"); // a pre-tab save is a sale
+    assert.equal(out.orders[2]?.status, "closed"); // unknown → closed
   });
 
   it("keeps recipe uses and order lines only when well-formed", () => {

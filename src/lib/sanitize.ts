@@ -171,7 +171,9 @@ function orders(raw: unknown): Order[] {
       return {
         id: entry.id as string,
         number: Math.max(0, Math.round(num(entry.number))),
+        status: oneOf(entry.status, ["open", "closed"] as const, "closed"),
         at: epoch(entry.at),
+        closedAt: entry.closedAt === undefined ? undefined : epoch(entry.closedAt),
         lines,
         subtotal: nonNegative(entry.subtotal),
         manualOff: nonNegative(entry.manualOff),

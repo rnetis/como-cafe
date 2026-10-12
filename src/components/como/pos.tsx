@@ -6,7 +6,8 @@ import { CATEGORIES, MODS } from "@/lib/catalog";
 import { cn } from "@/lib/cn";
 import type { CheckoutError } from "@/lib/checkout";
 import { formatMenu, formatToman, normPhone, tx, validPhone } from "@/lib/format";
-import { birthdaySoon, inSlowHour, tierName, tierOf, tierRate } from "@/lib/loyalty";
+import { birthdaySoon, inSlowHour, tierName, tierOf } from "@/lib/loyalty";
+import { quote } from "@/lib/quote";
 import { pecCall } from "@/lib/pec.functions";
 import { posCall, type PosResult } from "@/lib/pos.functions";
 import { buildReceiptDoc, printReceipt } from "@/lib/receipt";
@@ -38,6 +39,8 @@ export function Pos() {
   const customers = useCafe((state) => state.customers);
   const settings = useCafe((state) => state.settings);
   const checkout = useCafe((state) => state.checkout);
+  const openTicket = useCafe((state) => state.openTicket);
+  const addCustomer = useCafe((state) => state.addCustomer);
   const openReceipt = useCafe((state) => state.openReceipt);
   const logSms = useCafe((state) => state.logSms);
   const stock = useCafe((state) => state.stock);
@@ -87,33 +90,20 @@ export function Pos() {
       })
       .filter((line): line is NonNullable<typeof line> => Boolean(line));
     const subtotal = lines.reduce((sum, line) => sum + line.unit * line.qty, 0);
-    const manual = Math.round((subtotal * Math.min(100, Math.max(0, discount))) / 100);
-    let remain = Math.max(0, subtotal - manual);
     const cheapest = lines.reduce((min, line) => Math.min(min, line.unit), subtotal || 0);
-    const cap = settings.compCap > 0 ? Math.min(cheapest, settings.compCap) : cheapest;
-    const stamp =
-      useStamp && guest && guest.stamps >= settings.stampGoal ? Math.min(cap, remain) : 0;
-    remain -= stamp;
-    const year = new Date().getFullYear();
-    const gift =
-      useGift && guest && birthdaySoon(guest.birthday) && guest.giftYear !== year
-        ? Math.min(cap, remain)
-        : 0;
-    remain -= gift;
-    const rate = guest ? tierRate(tierOf(guest.spent)) : 0;
-    const tier = Math.round(remain * rate);
-    remain -= tier;
-    const redeemValue = guest ? Math.min(points, guest.points) * settings.pointValue : 0;
-    const pointsOff = Math.min(remain, redeemValue);
     return {
       lines,
       subtotal,
-      manual,
-      stamp,
-      gift,
-      tier,
-      pointsOff,
-      total: Math.max(0, remain - pointsOff),
+      ...quote({
+        subtotal,
+        cheapest,
+        discountPct: discount,
+        useStamp,
+        useGift,
+        redeemPoints: points,
+        customer: guest,
+        settings,
+      }),
     };
   }, [cart, menu, discount, useStamp, useGift, guest, settings, points]);
 
@@ -127,6 +117,49 @@ export function Pos() {
       return [...current, { key: `${itemId}-${Date.now()}`, itemId, qty: 1, mods: [] }];
     });
     setOpen(true);
+  };
+
+  /** Empty the register panel — the cart is settled, one way or another. */
+  const clearTicket = () => {
+    setCart([]);
+    setPhone("");
+    setName("");
+    setReferral("");
+    setCustomerId(undefined);
+    setDiscount(0);
+    setUseStamp(false);
+    setUseGift(false);
+    setPoints(0);
+    setNote("");
+    setOpen(false);
+  };
+
+  /**
+   * Keep the cart as an open ticket: nothing is consumed, charged or earned
+   * yet. It keeps its number and waits in Tickets until a cashier closes it —
+   * closing runs the register's own rules over these same lines.
+   */
+  const hold = () => {
+    const lines = cart.map((line) => ({ itemId: line.itemId, qty: line.qty, mods: line.mods }));
+    if (lines.length === 0) return;
+    let customerId = guest?.id;
+    if (!customerId && showNew) {
+      // The number is real data — keep the guest, the tab stays theirs.
+      const created = addCustomer({ name: name.trim(), phone, birthday: "", notes: "" });
+      if (created !== "phone" && created !== "bad") customerId = created;
+    }
+    const result = openTicket({
+      lines,
+      customerId,
+      guestName: showNew ? name.trim() || undefined : undefined,
+      note,
+    });
+    if (!result.ok) {
+      toast(tx(lang, "فیش خالی است یا آیتمی تمام شده", "The ticket is empty or an item was 86’d"));
+      return;
+    }
+    clearTicket();
+    toast(tx(lang, `فیش ${result.order.number} باز شد`, `Ticket ${result.order.number} is open`));
   };
 
   const charge = async () => {
@@ -260,17 +293,7 @@ export function Pos() {
         detail: outcome.detail,
       });
     }
-    setCart([]);
-    setPhone("");
-    setName("");
-    setReferral("");
-    setCustomerId(undefined);
-    setDiscount(0);
-    setUseStamp(false);
-    setUseGift(false);
-    setPoints(0);
-    setNote("");
-    setOpen(false);
+    clearTicket();
     toast(tx(lang, `فیش ${placed.number} بسته شد`, `Ticket ${placed.number} closed`));
   };
 
@@ -563,6 +586,9 @@ export function Pos() {
             )}
           </button>
         ) : null}
+        <Btn tone="line" className="w-full" disabled={preview.lines.length === 0} onClick={hold}>
+          {tx(lang, "نگه‌داشتن به‌عنوان فیش باز", "Hold as an open ticket")}
+        </Btn>
         <Btn className="w-full" disabled={preview.lines.length === 0 || (pay === "wallet" && (!walletCustomer || walletCustomer.walletBalance < preview.total))} onClick={() => void charge()}>
           {pay === "card" || pay === "online" ? (sendToDevice ? tx(lang, "بستن فیش و ارسال مبلغ به دستگاه", "Close ticket & send amount to device") : tx(lang, "بستن فیش", "Close ticket")) : tx(lang, "بستن فیش", "Close ticket")}
         </Btn>

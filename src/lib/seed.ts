@@ -108,6 +108,7 @@ function buildOrders(settings: Settings): Order[] {
       drafts.push({
         id: `seed-${day}-${slot}`,
         number: 0,
+        status: "closed",
         at,
         lines,
         subtotal,
@@ -126,45 +127,52 @@ function buildOrders(settings: Settings): Order[] {
         stampRedeemed: false,
         giftUsed: false,
         note: "",
+        closedAt: at,
       });
     }
   }
 
-  if (!drafts.some((order) => order.at > Date.now() - 3 * 60 * 60 * 1000)) {
-    const item = MENU.find((entry) => entry.id === "latte") ?? MENU[0]!;
-    const costOf = (sku: string) => INGREDIENTS.find((entry) => entry.sku === sku)?.cost ?? 0;
-    drafts.push({
-      id: "seed-live",
-      number: 0,
-      at: Date.now() - 20 * 60 * 1000,
-      lines: [
-        {
-          itemId: item.id,
-          nameFa: item.nameFa,
-          nameEn: item.nameEn,
-          qty: 1,
-          unitPrice: item.price,
-          unitCogs: recipeCost(item.recipe, costOf),
-          mods: [],
-        },
-      ],
-      subtotal: item.price,
-      manualOff: 0,
-      stampOff: 0,
-      giftOff: 0,
-      tierOff: 0,
-      pointsOff: 0,
-      pointsRedeemed: 0,
-      pointsEarned: 0,
-      bonusPoints: 0,
-      total: item.price,
-      cogs: recipeCost(item.recipe, costOf),
-      pay: "card",
-      stampRedeemed: false,
-      giftUsed: false,
-      note: "",
-    });
-  }
+  // The desk opens on a live tab: a table that ordered a couple of drinks and
+  // has not settled yet — open, editable, and out of the books until someone
+  // closes it. Seeded unconditionally so the ticket workflow is visible on
+  // first run at any hour.
+  const liveCostOf = (sku: string) => INGREDIENTS.find((item) => item.sku === sku)?.cost ?? 0;
+  const liveLines: OrderLine[] = [
+    MENU.find((entry) => entry.id === "spanish-latte") ?? MENU[0]!,
+    MENU.find((entry) => entry.id === "americano") ?? MENU[0]!,
+  ].map((item) => ({
+    itemId: item.id,
+    nameFa: item.nameFa,
+    nameEn: item.nameEn,
+    qty: 1,
+    unitPrice: item.price,
+    unitCogs: recipeCost(item.recipe, liveCostOf),
+    mods: [],
+  }));
+  const liveSubtotal = liveLines.reduce((sum, line) => sum + line.unitPrice * line.qty, 0);
+  drafts.push({
+    id: "seed-live",
+    number: 0,
+    status: "open",
+    at: Date.now() - 20 * 60 * 1000,
+    lines: liveLines,
+    subtotal: liveSubtotal,
+    manualOff: 0,
+    stampOff: 0,
+    giftOff: 0,
+    tierOff: 0,
+    pointsOff: 0,
+    pointsRedeemed: 0,
+    pointsEarned: 0,
+    bonusPoints: 0,
+    total: liveSubtotal,
+    cogs: liveLines.reduce((sum, line) => sum + line.unitCogs * line.qty, 0),
+    pay: "card", // settled when the tab closes
+    guestName: settings.lang === "fa" ? "میز ۳" : "Table 3",
+    stampRedeemed: false,
+    giftUsed: false,
+    note: "",
+  });
 
   drafts.sort((a, b) => a.at - b.at);
   drafts.forEach((order, index) => {

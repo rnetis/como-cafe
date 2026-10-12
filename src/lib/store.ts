@@ -1,10 +1,10 @@
 import { create } from "zustand";
 import { persist, type PersistStorage } from "zustand/middleware";
-import { applyCheckout, type CheckoutError } from "./checkout";
-import { expectedDrawer } from "./figures";
-import { startOfDay, uid, normPhone } from "./format";
-import { initialData, snapshotOf } from "./seed";
-import { sanitizeDeskData } from "./sanitize";
+import { applyCheckout, priceLines, type CheckoutError } from "./checkout.ts";
+import { expectedDrawer } from "./figures.ts";
+import { startOfDay, uid, normPhone } from "./format.ts";
+import { initialData, snapshotOf } from "./seed.ts";
+import { sanitizeDeskData } from "./sanitize.ts";
 import type {
   CashMove,
   CheckoutInput,
@@ -19,10 +19,29 @@ import type {
   Settings,
   SmsLog,
   StockReason,
-} from "./types";
+  TicketCloseInput,
+  TicketInput,
+} from "./types.ts";
 
 type CheckoutOk = { ok: true; order: Order; warnings: string[] };
 type CheckoutFail = { ok: false; error: CheckoutError };
+
+/** A partial edit of one cellar ingredient. The sku itself never changes. */
+export type StockPatch = Partial<
+  Pick<StockItem, "nameFa" | "nameEn" | "unit" | "onHand" | "par" | "cost">
+>;
+
+/** A partial edit of one ticket. Lines and the attached guest are open-ticket
+ *  territory — a closed ticket only accepts note and name touch-ups. */
+export type TicketPatch = {
+  lines?: { itemId: string; qty: number; mods: string[] }[];
+  customerId?: string | null;
+  guestName?: string;
+  note?: string;
+};
+
+type TicketPatchError = "empty" | "missing" | "locked";
+type TicketPatchResult = { ok: true; order: Order } | { ok: false; error: TicketPatchError };
 
 /** The shape `partialize` writes: the whole DeskData minus the transient receipt id. */
 type PersistedDesk = DeskData;
@@ -73,6 +92,13 @@ type Actions = {
   receiptId: string | null;
   openReceipt: (id: string | null) => void;
   checkout: (input: CheckoutInput) => CheckoutOk | CheckoutFail;
+  openTicket: (input: TicketInput) => TicketPatchResult;
+  patchTicket: (id: string, patch: TicketPatch) => TicketPatchResult;
+  deleteTicket: (id: string) => boolean;
+  closeTicket: (
+    id: string,
+    input: TicketCloseInput,
+  ) => CheckoutOk | CheckoutFail | { ok: false; error: "missing" | "locked" };
   patchSettings: (patch: Partial<Settings>) => void;
   setPrice: (id: string, price: number) => void;
   toggleItem: (id: string) => void;
@@ -81,6 +107,8 @@ type Actions = {
   ) => boolean;
   removeMenuItem: (id: string) => boolean;
   addStockItem: (item: Omit<StockItem, "sku">) => boolean;
+  patchStockItem: (sku: string, patch: StockPatch) => boolean;
+  removeStockItem: (sku: string) => boolean;
   receive: (sku: string, qty: number, cost: number, payCash: boolean) => boolean;
   waste: (sku: string, qty: number, note: string) => boolean;
   setCount: (sku: string, next: number) => boolean;
@@ -123,6 +151,148 @@ export const useCafe = create<CafeStore>()(
         if (!applied.ok) return applied;
         set(applied.data);
         return { ok: true, order: applied.order, warnings: applied.warnings };
+      },
+      openTicket: (input) => {
+        const data = snapshotOf(get());
+        const priced = priceLines(data, input.lines);
+        if (!priced.ok) return priced;
+        const customer = input.customerId
+          ? data.customers.find((entry) => entry.id === input.customerId)
+          : undefined;
+        const number = data.orders.reduce((max, order) => Math.max(max, order.number), 0) + 1;
+        const order: Order = {
+          id: uid("ord"),
+          number,
+          status: "open",
+          at: Date.now(),
+          lines: priced.orderLines,
+          subtotal: priced.subtotal,
+          // Nothing is discounted, earned or consumed while a ticket is open —
+          // closing it runs the full register rules over these same lines.
+          manualOff: 0,
+          stampOff: 0,
+          giftOff: 0,
+          tierOff: 0,
+          pointsOff: 0,
+          pointsRedeemed: 0,
+          pointsEarned: 0,
+          bonusPoints: 0,
+          total: priced.subtotal,
+          cogs: priced.orderLines.reduce((sum, line) => sum + line.unitCogs * line.qty, 0),
+          pay: "cash", // replaced with the real method when the ticket closes
+          customerId: customer?.id,
+          guestName: input.guestName?.trim().slice(0, 60) || customer?.name || undefined,
+          stampRedeemed: false,
+          giftUsed: false,
+          note: input.note.trim().slice(0, 140),
+        };
+        set((state) => ({ orders: [order, ...state.orders].slice(0, 500) }));
+        return { ok: true, order };
+      },
+      patchTicket: (id, patch) => {
+        const ticket = get().orders.find((entry) => entry.id === id);
+        if (!ticket) return { ok: false, error: "missing" };
+        // A closed ticket already moved stock and loyalty; its lines are
+        // sealed. Only the note and the name on it stay editable.
+        if (ticket.status === "closed" && (patch.lines !== undefined || patch.customerId !== undefined))
+          return { ok: false, error: "locked" };
+        const data = snapshotOf(get());
+        let lines = ticket.lines;
+        let subtotal = ticket.subtotal;
+        let cogs = ticket.cogs;
+        if (patch.lines !== undefined) {
+          const priced = priceLines(data, patch.lines);
+          if (!priced.ok) return priced;
+          lines = priced.orderLines;
+          subtotal = priced.subtotal;
+          cogs = priced.orderLines.reduce((sum, line) => sum + line.unitCogs * line.qty, 0);
+        }
+        const guestName =
+          patch.guestName === undefined
+            ? ticket.guestName
+            : patch.guestName.trim().slice(0, 60) || undefined;
+        const customerId =
+          patch.customerId === undefined
+            ? ticket.customerId
+            : patch.customerId === null
+              ? undefined
+              : data.customers.some((entry) => entry.id === patch.customerId)
+                ? patch.customerId
+                : ticket.customerId;
+        const note = patch.note === undefined ? ticket.note : patch.note.trim().slice(0, 140);
+        const updated: Order = {
+          ...ticket,
+          lines,
+          subtotal,
+          cogs,
+          guestName,
+          customerId,
+          note,
+          total: ticket.status === "open" ? subtotal : ticket.total,
+        };
+        set((state) => ({
+          orders: state.orders.map((entry) => (entry.id === id ? updated : entry)),
+        }));
+        return { ok: true, order: updated };
+      },
+      deleteTicket: (id) => {
+        const ticket = get().orders.find((entry) => entry.id === id);
+        // An open ticket never touched the books, so it can go without a trace.
+        // A closed one is a sale; the ledger keeps it.
+        if (!ticket || ticket.status !== "open") return false;
+        set((state) => ({ orders: state.orders.filter((entry) => entry.id !== id) }));
+        return true;
+      },
+      closeTicket: (id, input) => {
+        const ticket = get().orders.find((entry) => entry.id === id);
+        if (!ticket) return { ok: false, error: "missing" };
+        if (ticket.status !== "open") return { ok: false, error: "locked" };
+        // Closing is the sale: the register's own rules run over the ticket's
+        // lines, so stock, loyalty and money land exactly as a direct sale.
+        const applied = applyCheckout(snapshotOf(get()), {
+          lines: ticket.lines.map((line) => ({
+            itemId: line.itemId,
+            qty: line.qty,
+            mods: line.mods.map((mod) => mod.id),
+          })),
+          pay: input.pay,
+          note: input.note === undefined ? ticket.note : input.note.trim().slice(0, 140),
+          customerId: ticket.customerId,
+          discountPct: input.discountPct,
+          useStamp: input.useStamp,
+          useGift: input.useGift,
+          redeemPoints: input.redeemPoints,
+        });
+        if (!applied.ok) return applied;
+        const closed: Order = {
+          ...applied.order,
+          id: ticket.id,
+          number: ticket.number,
+          status: "closed",
+          at: ticket.at,
+          closedAt: Date.now(),
+        };
+        set({
+          ...applied.data,
+          // The register stamped the sale's stock moves with the number it
+          // minted for itself; the tab keeps its own number, so the movement
+          // log follows the ticket the guests actually hold.
+          moves: applied.data.moves.map((entry) =>
+            entry.reason === "sale" && entry.note === `#${applied.order.number}`
+              ? { ...entry, note: `#${ticket.number}` }
+              : entry,
+          ),
+          // The close reuses the ticket: the register minted a fresh order for
+          // the money (applied.order), so drop that one and the open tab, and
+          // put the settled ticket back under its own number.
+          orders: [
+            closed,
+            ...applied.data.orders.filter(
+              (entry) => entry.id !== ticket.id && entry.id !== applied.order.id,
+            ),
+          ].slice(0, 500),
+        });
+        return { ok: true, order: closed, warnings: applied.warnings };
       },
       patchSettings: (patch) => set((state) => ({ settings: { ...state.settings, ...patch } })),
       setPrice: (id, price) => {
@@ -179,6 +349,52 @@ export const useCafe = create<CafeStore>()(
         if (get().orders.some((order) => order.lines.some((line) => line.itemId === id)))
           return false;
         set((state) => ({ menu: state.menu.filter((entry) => entry.id !== id) }));
+        return true;
+      },
+      patchStockItem: (sku, patch) => {
+        const current = get().stock.find((entry) => entry.sku === sku);
+        if (!current) return false;
+        const nameFa = patch.nameFa === undefined ? current.nameFa : patch.nameFa.trim();
+        const nameEn = patch.nameEn === undefined ? current.nameEn : patch.nameEn.trim();
+        const onHand =
+          patch.onHand === undefined ? current.onHand : Math.round(patch.onHand * 1000) / 1000;
+        const par = patch.par === undefined ? current.par : Math.round(patch.par * 1000) / 1000;
+        const cost = patch.cost === undefined ? current.cost : Math.round(patch.cost);
+        if (!nameFa || !nameEn) return false;
+        if (![onHand, par, cost].every((value) => Number.isFinite(value) && value >= 0)) return false;
+        if (
+          get().stock.some(
+            (entry) =>
+              entry.sku !== sku &&
+              (entry.nameEn.toLowerCase() === nameEn.toLowerCase() || entry.nameFa === nameFa),
+          )
+        )
+          return false;
+        const unit = patch.unit ?? current.unit;
+        const delta = Math.round((onHand - current.onHand) * 1000) / 1000;
+        set((state) => ({
+          stock: state.stock.map((entry) =>
+            entry.sku === sku ? { ...entry, nameFa, nameEn, unit, onHand, par, cost } : entry,
+          ),
+          // A count typed straight into the edit form is still a count: the
+          // movement log keeps saying who moved what, and why.
+          moves:
+            Math.abs(delta) > 1e-9
+              ? [move(sku, delta, "adjust", "ویرایش"), ...state.moves].slice(0, 300)
+              : state.moves,
+        }));
+        return true;
+      },
+      removeStockItem: (sku) => {
+        const item = get().stock.find((entry) => entry.sku === sku);
+        if (!item) return false;
+        // An ingredient still on a recipe cannot vanish — the drink would stop
+        // consuming stock behind everyone's back. Pull it from the menu first.
+        if (get().menu.some((entry) => entry.recipe.some((use) => use.sku === sku))) return false;
+        set((state) => ({
+          stock: state.stock.filter((entry) => entry.sku !== sku),
+          moves: state.moves.filter((entry) => entry.sku !== sku),
+        }));
         return true;
       },
       addStockItem: (item) => {
@@ -358,7 +574,9 @@ export const useCafe = create<CafeStore>()(
       setCredit: (value) => set({ credit: { value, at: Date.now() } }),
       closeDay: (note) =>
         set((state) => {
-          const today = state.orders.filter((order) => order.at >= startOfDay());
+          const today = state.orders.filter(
+            (order) => order.status === "closed" && order.at >= startOfDay(),
+          );
           const expenses = state.expenses
             .filter((expense) => expense.at >= startOfDay())
             .reduce((sum, expense) => sum + expense.amount, 0);
