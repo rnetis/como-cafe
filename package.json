@@ -106,5 +106,5 @@
     "prettier": "^3.4.0",
     "typescript-eslint": "^8.56.1"
   },
-  "version": "1.4.1"
+  "version": "1.5.1"
 }
