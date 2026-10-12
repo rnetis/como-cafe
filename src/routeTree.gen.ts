@@ -10,33 +10,53 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CellarRouteImport } from './routes/cellar'
+import { Route as TicketsRouteImport } from './routes/tickets'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CellarRoute = CellarRouteImport.update({
+  id: '/cellar',
+  path: '/cellar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TicketsRoute = TicketsRouteImport.update({
+  id: '/tickets',
+  path: '/tickets',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/cellar': typeof CellarRoute
+  '/tickets': typeof TicketsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/cellar': typeof CellarRoute
+  '/tickets': typeof TicketsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/cellar': typeof CellarRoute
+  '/tickets': typeof TicketsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/cellar' | '/tickets'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/cellar' | '/tickets'
+  id: '__root__' | '/' | '/cellar' | '/tickets'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CellarRoute: typeof CellarRoute
+  TicketsRoute: typeof TicketsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +68,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cellar': {
+      id: '/cellar'
+      path: '/cellar'
+      fullPath: '/cellar'
+      preLoaderRoute: typeof CellarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tickets': {
+      id: '/tickets'
+      path: '/tickets'
+      fullPath: '/tickets'
+      preLoaderRoute: typeof TicketsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CellarRoute: CellarRoute,
+  TicketsRoute: TicketsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
