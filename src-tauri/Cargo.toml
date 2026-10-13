@@ -1,6 +1,6 @@
 [package]
 name = "como-desk"
-version = "1.5.1"
+version = "1.6.0"
 description = "COMO coffee desk — register, cellar, books, guests, SMS. Shares a live view over the café LAN."
 edition = "2021"
 
