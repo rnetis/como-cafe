@@ -1,6 +1,7 @@
 import { MODS, recipeCost } from "./catalog.ts";
 import { normPhone, uid, validPhone } from "./format.ts";
 import { birthdaySoon, earnedPoints, inSlowHour, tierOf, tierRate } from "./loyalty.ts";
+import { recipeUsage } from "./tickets.ts";
 import type { CheckoutInput, DeskData, Order, OrderLine, StockItem } from "./types.ts";
 
 export type CheckoutError = "empty" | "missing" | "phone" | "stock" | "wallet";
@@ -192,19 +193,7 @@ export function applyCheckout(
     note: input.note.trim().slice(0, 140),
   };
 
-  const usage = new Map<string, number>();
-  const addUse = (recipe: { sku: string; qty: number }[], times: number) => {
-    for (const use of recipe) usage.set(use.sku, (usage.get(use.sku) ?? 0) + use.qty * times);
-  };
-  for (const line of linesIn) {
-    const item = data.menu.find((entry) => entry.id === line.itemId);
-    if (!item) continue;
-    addUse(item.recipe, line.qty);
-    for (const modId of line.mods) {
-      const mod = MODS.find((entry) => entry.id === modId);
-      if (mod) addUse(mod.recipe, line.qty);
-    }
-  }
+  const usage = recipeUsage(data, linesIn);
 
   // A sale must be all-or-nothing: never book a ticket that consumes stock we
   // do not have. The till and LAN orders share this path.

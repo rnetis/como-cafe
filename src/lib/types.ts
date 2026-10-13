@@ -54,8 +54,10 @@ export type OrderLine = {
  * A ticket lives open until it is closed. An open ticket is a tab: lines can
  * be added, changed or removed, nothing touches stock or loyalty yet, and the
  * books ignore it. Closing it is the sale: stock comes out, loyalty lands, the
- * money counts. Closed tickets are records — only the note and guest name can
- * still be edited.
+ * money counts. A closed ticket is a record — correctable, not rewritable: its
+ * lines, guest name, note, date and method can still be changed, and the cellar
+ * and the guest's books are reconciled to match. Re-attaching a different guest
+ * is the one thing a closed sale refuses.
  */
 export type OrderStatus = "open" | "closed";
 
@@ -127,6 +129,8 @@ export type Expense = {
   amount: number;
   note: string;
   method: "cash" | "card" | "transfer";
+  /** Free text under the owner's own column name (`settings.expenseCustomLabel`). */
+  custom: string;
 };
 
 export type StockReason = "sale" | "purchase" | "waste" | "adjust";
@@ -198,6 +202,8 @@ export type Settings = {
   baud: 9600 | 115200;
   autoPrint: boolean;
   autoSms: boolean;
+  /** What the owner calls the extra column on every expense ("Supplier", "Paid by"…). */
+  expenseCustomLabel: string;
 };
 
 export type CreditSnap = { value: number; at: number } | null;

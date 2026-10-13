@@ -55,6 +55,33 @@ export function startOfDay(ts = Date.now()) {
   return d.getTime();
 }
 
+/** Just the clock, for rows already grouped under a day heading. */
+export function formatTime(ts: number, lang: Lang) {
+  return new Intl.DateTimeFormat(lang === "fa" ? "fa-IR" : "en-GB", { timeStyle: "short" }).format(
+    new Date(ts),
+  );
+}
+
+/**
+ * The name of a calendar day: "Today" and "Yesterday" carry more than a date
+ * does, and only a day outside the current year needs to say which year.
+ */
+export function formatDayLabel(ts: number, lang: Lang) {
+  const today = startOfDay();
+  const day = startOfDay(ts);
+  if (day === today) return tx(lang, "امروز", "Today");
+  const back = new Date();
+  back.setDate(back.getDate() - 1);
+  if (day === startOfDay(back.getTime())) return tx(lang, "دیروز", "Yesterday");
+  const sameYear = new Date(day).getFullYear() === new Date(today).getFullYear();
+  return new Intl.DateTimeFormat(lang === "fa" ? "fa-IR" : "en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    ...(sameYear ? {} : { year: "numeric" }),
+  }).format(new Date(day));
+}
+
 export function normPhone(input: string) {
   let s = input.replace(/[^\d]/g, "");
   if (s.startsWith("0098")) s = `0${s.slice(4)}`;

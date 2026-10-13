@@ -210,6 +210,7 @@ function expenses(raw: unknown): Expense[] {
       amount: nonNegative(entry.amount),
       note: str(entry.note),
       method: oneOf(entry.method, ["cash", "card", "transfer"] as const, "cash"),
+      custom: str(entry.custom).slice(0, 140),
     }))
     .slice(0, EXPENSES_CAP);
 }
@@ -319,6 +320,7 @@ function settings(raw: unknown): Settings {
     baud: patch.baud === 115200 ? 115200 : 9600,
     autoPrint: bool(patch.autoPrint, base.autoPrint),
     autoSms: bool(patch.autoSms, base.autoSms),
+    expenseCustomLabel: str(patch.expenseCustomLabel, base.expenseCustomLabel).slice(0, 40),
   };
 }
 

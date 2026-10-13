@@ -118,6 +118,25 @@ export function House() {
         </Field>
       </div>
 
+      <h2 className="mt-8 text-lg font-medium">{tx(lang, "هزینه‌ها", "Expenses")}</h2>
+      <p className="mt-1 text-sm text-mute">
+        {tx(
+          lang,
+          "هر هزینه یک ستون آزاد دارد. اسمش را اینجا بنویس؛ در دفتر، همان اسم بالای آن ستون می‌نشیند.",
+          "Every expense carries one free column. Name it here and that name sits above it in the books.",
+        )}
+      </p>
+      <div className="mt-3 max-w-sm">
+        <Field label={tx(lang, "نام ستون آزاد", "Free column name")}>
+          <input
+            className={fieldClass}
+            placeholder={tx(lang, "تأمین‌کننده، پرداخت‌کننده…", "Supplier, paid by…")}
+            value={settings.expenseCustomLabel}
+            onChange={(event) => patch({ expenseCustomLabel: event.target.value })}
+          />
+        </Field>
+      </div>
+
       <h2 className="mt-8 text-lg font-medium">{tx(lang, "چاپگر حرارتی", "Thermal printer")}</h2>
       <div className="mt-3 flex flex-wrap gap-2">
         {([80, 58] as const).map((paper) => (

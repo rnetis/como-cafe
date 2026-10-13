@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { toast } from "sonner";
 import { Btn, Field, Kpi, fieldClass } from "@/components/como/bits";
 import { expectedDrawer, inRange, type RangeKey } from "@/lib/figures";
 import { formatCompact, formatDay, formatToman, formatWhen, startOfDay, tx } from "@/lib/format";
 import { useCafe } from "@/lib/store";
-import type { ExpenseCategory } from "@/lib/types";
+import type { Expense, ExpenseCategory } from "@/lib/types";
 
 const ranges: { id: RangeKey; fa: string; en: string }[] = [
   { id: "today", fa: "امروز", en: "Today" },
@@ -20,15 +21,102 @@ const categories: { id: ExpenseCategory; fa: string; en: string }[] = [
   { id: "other", fa: "سایر", en: "Other" },
 ];
 
+const METHODS: { id: Expense["method"]; fa: string; en: string }[] = [
+  { id: "cash", fa: "نقد", en: "Cash" },
+  { id: "card", fa: "کارت", en: "Card" },
+  { id: "transfer", fa: "انتقال", en: "Transfer" },
+];
+
+type ExpenseDraft = Pick<Expense, "category" | "amount" | "note" | "custom" | "method">;
+
+const BLANK: ExpenseDraft = { category: "supplies", amount: 0, note: "", custom: "", method: "cash" };
+
+const categoryName = (id: ExpenseCategory, lang: "fa" | "en") => {
+  const found = categories.find((item) => item.id === id);
+  return found ? (lang === "fa" ? found.fa : found.en) : id;
+};
+
+/** The five fields one expense is made of — the add form and an edited row
+ *  render the same ones, so a row can never drift from what "Add" records. */
+function ExpenseFields({
+  lang,
+  label,
+  draft,
+  setDraft,
+}: {
+  lang: "fa" | "en";
+  label: string;
+  draft: ExpenseDraft;
+  setDraft: (next: ExpenseDraft) => void;
+}) {
+  return (
+    <>
+      <Field label={tx(lang, "دسته", "Category")}>
+        <select
+          className={fieldClass}
+          value={draft.category}
+          onChange={(event) => setDraft({ ...draft, category: event.target.value as ExpenseCategory })}
+        >
+          {categories.map((item) => (
+            <option key={item.id} value={item.id}>
+              {tx(lang, item.fa, item.en)}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <Field label={tx(lang, "مبلغ تومان", "Amount, toman")}>
+        <input
+          dir="ltr"
+          type="number"
+          className={fieldClass}
+          value={draft.amount || ""}
+          onChange={(event) => setDraft({ ...draft, amount: Number(event.target.value) })}
+        />
+      </Field>
+      <Field label={label}>
+        <input
+          className={fieldClass}
+          value={draft.custom}
+          onChange={(event) => setDraft({ ...draft, custom: event.target.value })}
+        />
+      </Field>
+      <Field label={tx(lang, "شرح", "Note")}>
+        <input
+          className={fieldClass}
+          value={draft.note}
+          onChange={(event) => setDraft({ ...draft, note: event.target.value })}
+        />
+      </Field>
+      <div className="flex gap-1">
+        {METHODS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => setDraft({ ...draft, method: item.id })}
+            className={`h-11 flex-1 text-sm ${draft.method === item.id ? "bg-ink text-paper" : "border border-line"}`}
+          >
+            {tx(lang, item.fa, item.en)}
+          </button>
+        ))}
+      </div>
+    </>
+  );
+}
+
 export function Books() {
   const data = useCafe();
   const lang = data.settings.lang;
   const [range, setRange] = useState<RangeKey>("d7");
-  const [category, setCategory] = useState<ExpenseCategory>("supplies");
-  const [amount, setAmount] = useState(0);
-  const [note, setNote] = useState("");
-  const [method, setMethod] = useState<"cash" | "card" | "transfer">("cash");
+  const [draft, setDraft] = useState<ExpenseDraft>(BLANK);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<ExpenseDraft>(BLANK);
+  const [armDelete, setArmDelete] = useState(false);
   const [closeNote, setCloseNote] = useState("");
+
+  // The owner names the extra column once, in House; until then it is just a
+  // label. Empty means the column is simply unnamed, not hidden.
+  const customLabel =
+    data.settings.expenseCustomLabel.trim() || tx(lang, "برچسب دلخواه", "Custom label");
 
   // Open tabs are not sales yet — the books only count closed tickets.
   const closed = data.orders.filter((order) => order.status === "closed");
@@ -115,40 +203,14 @@ export function Books() {
           className="grid gap-3 border border-line bg-sheet p-4"
           onSubmit={(event) => {
             event.preventDefault();
-            if (amount <= 0) return;
-            data.addExpense({ category, amount, note, method });
-            setAmount(0);
-            setNote("");
+            if (draft.amount <= 0) return;
+            data.addExpense(draft);
+            setDraft({ ...BLANK, category: draft.category, method: draft.method });
+            toast(tx(lang, "هزینه ثبت شد", "Expense recorded"));
           }}
         >
           <h2 className="text-lg font-medium">{tx(lang, "هزینه", "Expense")}</h2>
-          <Field label={tx(lang, "دسته", "Category")}>
-            <select className={fieldClass} value={category} onChange={(event) => setCategory(event.target.value as ExpenseCategory)}>
-              {categories.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {tx(lang, item.fa, item.en)}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label={tx(lang, "مبلغ تومان", "Amount, toman")}>
-            <input dir="ltr" type="number" className={fieldClass} value={amount || ""} onChange={(event) => setAmount(Number(event.target.value))} />
-          </Field>
-          <Field label={tx(lang, "شرح", "Note")}>
-            <input className={fieldClass} value={note} onChange={(event) => setNote(event.target.value)} />
-          </Field>
-          <div className="flex gap-1">
-            {(["cash", "card", "transfer"] as const).map((item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => setMethod(item)}
-                className={`h-11 flex-1 text-sm ${method === item ? "bg-ink text-paper" : "border border-line"}`}
-              >
-                {item === "cash" ? tx(lang, "نقد", "Cash") : item === "card" ? tx(lang, "کارت", "Card") : tx(lang, "انتقال", "Transfer")}
-              </button>
-            ))}
-          </div>
+          <ExpenseFields lang={lang} label={customLabel} draft={draft} setDraft={setDraft} />
           <Btn type="submit">{tx(lang, "ثبت هزینه", "Add expense")}</Btn>
         </form>
 
@@ -178,15 +240,105 @@ export function Books() {
 
       <h2 className="mt-8 text-lg font-medium">{tx(lang, "آخرین هزینه‌ها", "Recent expenses")}</h2>
       <ul className="mt-2 divide-y divide-line border-y border-line text-sm">
-        {data.expenses.slice(0, 8).map((expense) => (
-          <li key={expense.id} className="flex items-center justify-between gap-3 py-2">
-            <span>
-              {tx(lang, categories.find((item) => item.id === expense.category)?.fa ?? "", categories.find((item) => item.id === expense.category)?.en ?? "")}
-              <span className="ms-2 text-xs text-mute">{expense.note}</span>
-            </span>
-            <span>{formatCompact(expense.amount, lang)}</span>
-          </li>
-        ))}
+        {data.expenses.slice(0, 8).map((expense) =>
+          editingId === expense.id ? (
+            <li key={expense.id} className="grid gap-3 bg-sheet py-3">
+              <ExpenseFields
+                lang={lang}
+                label={customLabel}
+                draft={editDraft}
+                setDraft={setEditDraft}
+              />
+              <div className="flex flex-wrap gap-1">
+                <Btn
+                  onClick={() => {
+                    if (editDraft.amount <= 0) {
+                      toast(tx(lang, "مبلغ را بنویس", "Enter an amount"));
+                      return;
+                    }
+                    if (!data.patchExpense(expense.id, editDraft)) {
+                      toast(tx(lang, "این هزینه پیدا نشد", "That expense is gone"));
+                      return;
+                    }
+                    setEditingId(null);
+                    toast(tx(lang, "هزینه به‌روز شد", "Expense updated"));
+                  }}
+                >
+                  {tx(lang, "ذخیره", "Save")}
+                </Btn>
+                <Btn
+                  tone="line"
+                  onClick={() => {
+                    setEditingId(null);
+                    setArmDelete(false);
+                  }}
+                >
+                  {tx(lang, "بی‌خیال", "Cancel")}
+                </Btn>
+                <Btn
+                  tone="stamp"
+                  onClick={() => {
+                    if (!armDelete) {
+                      setArmDelete(true);
+                      return;
+                    }
+                    data.removeExpense(expense.id);
+                    setEditingId(null);
+                    setArmDelete(false);
+                    toast(tx(lang, "هزینه پاک شد", "Expense deleted"));
+                  }}
+                >
+                  {armDelete
+                    ? tx(lang, "مطمئنی؟ دوباره بزن", "Sure? Tap again")
+                    : tx(lang, "پاک‌کردن", "Delete")}
+                </Btn>
+              </div>
+            </li>
+          ) : (
+            <li key={expense.id} className="flex items-center justify-between gap-3 py-2">
+              <span className="min-w-0">
+                <span className="block truncate">
+                  {categoryName(expense.category, lang)}
+                  {expense.custom ? (
+                    <span className="ms-2 text-xs text-ink-soft">{expense.custom}</span>
+                  ) : null}
+                </span>
+                <span className="block truncate text-xs text-mute">
+                  {[
+                    expense.note,
+                    METHODS.find((item) => item.id === expense.method)?.[lang === "fa" ? "fa" : "en"],
+                    formatWhen(expense.at, lang),
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </span>
+              </span>
+              <span className="flex shrink-0 items-center gap-3">
+                <span>{formatCompact(expense.amount, lang)}</span>
+                <button
+                  type="button"
+                  className="text-xs underline"
+                  onClick={() => {
+                    setEditingId(expense.id);
+                    setEditDraft({
+                      category: expense.category,
+                      amount: expense.amount,
+                      note: expense.note,
+                      custom: expense.custom,
+                      method: expense.method,
+                    });
+                    setArmDelete(false);
+                  }}
+                >
+                  {tx(lang, "ویرایش", "Edit")}
+                </button>
+              </span>
+            </li>
+          ),
+        )}
+        {data.expenses.length === 0 ? (
+          <li className="py-3 text-mute">{tx(lang, "هنوز هزینه‌ای ثبت نشده.", "No expense yet.")}</li>
+        ) : null}
       </ul>
     </div>
   );

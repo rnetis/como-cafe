@@ -3,8 +3,10 @@ import { persist, type PersistStorage } from "zustand/middleware";
 import { applyCheckout, priceLines, type CheckoutError } from "./checkout.ts";
 import { expectedDrawer } from "./figures.ts";
 import { startOfDay, uid, normPhone } from "./format.ts";
+import { earnedPoints, inSlowHour } from "./loyalty.ts";
 import { initialData, snapshotOf } from "./seed.ts";
 import { sanitizeDeskData } from "./sanitize.ts";
+import { linesOf, reconcileStock, rollbackSale } from "./tickets.ts";
 import type {
   CashMove,
   CheckoutInput,
@@ -15,6 +17,7 @@ import type {
   MenuItem,
   RecipeUse,
   Order,
+  Pay,
   StockItem,
   Settings,
   SmsLog,
@@ -31,16 +34,25 @@ export type StockPatch = Partial<
   Pick<StockItem, "nameFa" | "nameEn" | "unit" | "onHand" | "par" | "cost">
 >;
 
-/** A partial edit of one ticket. Lines and the attached guest are open-ticket
- *  territory — a closed ticket only accepts note and name touch-ups. */
+/** A partial edit of one expense. The id and the row itself never move. */
+export type ExpensePatch = Partial<
+  Pick<Expense, "category" | "amount" | "note" | "method" | "custom" | "at">
+>;
+
+/** A partial edit of one ticket. An open tab takes anything; a closed sale
+ *  takes corrections to its lines, name, note, date and method — but never a
+ *  different guest, which would move loyalty between two people's books. */
 export type TicketPatch = {
   lines?: { itemId: string; qty: number; mods: string[] }[];
   customerId?: string | null;
   guestName?: string;
   note?: string;
+  pay?: Pay;
+  /** Moves the ticket to another day; a closed ticket's `closedAt` follows. */
+  at?: number;
 };
 
-type TicketPatchError = "empty" | "missing" | "locked";
+type TicketPatchError = "empty" | "missing" | "locked" | "stock";
 type TicketPatchResult = { ok: true; order: Order } | { ok: false; error: TicketPatchError };
 
 /** The shape `partialize` writes: the whole DeskData minus the transient receipt id. */
@@ -113,6 +125,8 @@ type Actions = {
   waste: (sku: string, qty: number, note: string) => boolean;
   setCount: (sku: string, next: number) => boolean;
   addExpense: (expense: Omit<Expense, "id" | "at">) => void;
+  patchExpense: (id: string, patch: ExpensePatch) => boolean;
+  removeExpense: (id: string) => boolean;
   patchCustomer: (id: string, patch: Partial<Customer>) => boolean;
   addCustomer: (input: {
     name: string;
@@ -192,9 +206,9 @@ export const useCafe = create<CafeStore>()(
       patchTicket: (id, patch) => {
         const ticket = get().orders.find((entry) => entry.id === id);
         if (!ticket) return { ok: false, error: "missing" };
-        // A closed ticket already moved stock and loyalty; its lines are
-        // sealed. Only the note and the name on it stay editable.
-        if (ticket.status === "closed" && (patch.lines !== undefined || patch.customerId !== undefined))
+        // Handing a settled sale to somebody else would move spend, points and
+        // stamps between two guests' books. Everything else on it is correctable.
+        if (ticket.status === "closed" && patch.customerId !== undefined)
           return { ok: false, error: "locked" };
         const data = snapshotOf(get());
         let lines = ticket.lines;
@@ -220,27 +234,119 @@ export const useCafe = create<CafeStore>()(
                 ? patch.customerId
                 : ticket.customerId;
         const note = patch.note === undefined ? ticket.note : patch.note.trim().slice(0, 140);
+        const at =
+          patch.at !== undefined && Number.isFinite(patch.at) ? Math.round(patch.at) : ticket.at;
+
+        if (ticket.status === "open") {
+          const updated: Order = {
+            ...ticket,
+            lines,
+            subtotal,
+            cogs,
+            guestName,
+            customerId,
+            note,
+            at,
+            total: subtotal,
+          };
+          set((state) => ({
+            orders: state.orders.map((entry) => (entry.id === id ? updated : entry)),
+          }));
+          return { ok: true, order: updated };
+        }
+
+        // A closed ticket is a sale already written down. Correcting its lines
+        // means moving the cellar and the guest's books to match, so the
+        // correction is all-or-nothing: a version we cannot afford never lands.
+        const edited = patch.lines !== undefined;
+        const reconciled = edited
+          ? reconcileStock(data, ticket.lines, linesOf(lines), ticket.number, at)
+          : null;
+        if (reconciled && !reconciled.ok) return { ok: false, error: "stock" };
+
+        // The offsets recorded at close (discount, stamp, gift, tier, points)
+        // are absolute toman. They stay as recorded; the total just never goes
+        // below zero when a corrected ticket comes out cheaper than its offsets.
+        const offsets =
+          ticket.manualOff + ticket.stampOff + ticket.giftOff + ticket.tierOff + ticket.pointsOff;
+        const total = Math.max(0, subtotal - offsets);
+        const pointsEarned = ticket.customerId
+          ? earnedPoints(total, data.settings.pointsPer, inSlowHour(at, data.settings.slowStart, data.settings.slowEnd))
+          : 0;
+        const spentDelta = total - ticket.total;
+        const pointsDelta = pointsEarned - ticket.pointsEarned;
+        const qtyDelta = edited
+          ? lines.reduce((sum, line) => sum + line.qty, 0) -
+            ticket.lines.reduce((sum, line) => sum + line.qty, 0)
+          : 0;
+
         const updated: Order = {
           ...ticket,
           lines,
           subtotal,
           cogs,
           guestName,
-          customerId,
           note,
-          total: ticket.status === "open" ? subtotal : ticket.total,
+          at,
+          closedAt: at === ticket.at ? ticket.closedAt : at,
+          pay: patch.pay ?? ticket.pay,
+          total,
+          pointsEarned,
+          pointsAfter:
+            ticket.pointsAfter === undefined
+              ? undefined
+              : Math.max(0, ticket.pointsAfter + pointsDelta),
+          stampsAfter:
+            ticket.stampsAfter === undefined
+              ? undefined
+              : Math.max(0, ticket.stampsAfter + qtyDelta),
         };
+
+        const customers =
+          ticket.customerId && (spentDelta !== 0 || pointsDelta !== 0 || qtyDelta !== 0)
+            ? data.customers.map((entry) =>
+                entry.id === ticket.customerId
+                  ? {
+                      ...entry,
+                      spent: Math.max(0, entry.spent + spentDelta),
+                      points: Math.max(0, entry.points + pointsDelta),
+                      stamps: Math.max(0, entry.stamps + qtyDelta),
+                    }
+                  : entry,
+              )
+            : data.customers;
+
         set((state) => ({
           orders: state.orders.map((entry) => (entry.id === id ? updated : entry)),
+          ...(reconciled && reconciled.ok ? { stock: reconciled.stock, moves: reconciled.moves } : {}),
+          ...(customers === data.customers ? {} : { customers }),
         }));
         return { ok: true, order: updated };
       },
       deleteTicket: (id) => {
         const ticket = get().orders.find((entry) => entry.id === id);
-        // An open ticket never touched the books, so it can go without a trace.
-        // A closed one is a sale; the ledger keeps it.
-        if (!ticket || ticket.status !== "open") return false;
-        set((state) => ({ orders: state.orders.filter((entry) => entry.id !== id) }));
+        if (!ticket) return false;
+        if (ticket.status === "open") {
+          // An open tab never touched the books, so it can go without a trace.
+          set((state) => ({
+            orders: state.orders.filter((entry) => entry.id !== id),
+            receiptId: state.receiptId === id ? null : state.receiptId,
+          }));
+          return true;
+        }
+        // A closed ticket is a sale. Deleting it undoes everything the close
+        // wrote: the ingredient it pulled, the loyalty it landed, the credit it
+        // drew on. Day closes already recorded stay as they were — they are
+        // snapshots of a moment, not a live sum.
+        const rolled = rollbackSale(snapshotOf(get()), ticket, Date.now());
+        set((state) => ({
+          stock: rolled.stock,
+          moves: rolled.moves,
+          customers: rolled.customers,
+          customerCreditMoves: rolled.customerCreditMoves,
+          orders: state.orders.filter((entry) => entry.id !== id),
+          receiptId: state.receiptId === id ? null : state.receiptId,
+        }));
         return true;
       },
       closeTicket: (id, input) => {
@@ -503,10 +609,45 @@ export const useCafe = create<CafeStore>()(
       addExpense: (expense) =>
         set((state) => ({
           expenses: [
-            { ...expense, id: uid("ex"), at: Date.now(), amount: Math.max(0, expense.amount) },
+            {
+              ...expense,
+              id: uid("ex"),
+              at: Date.now(),
+              amount: Math.max(0, Math.round(expense.amount)),
+              note: expense.note.trim().slice(0, 140),
+              custom: expense.custom.trim().slice(0, 140),
+            },
             ...state.expenses,
           ].slice(0, 400),
         })),
+      patchExpense: (id, patch) => {
+        const current = get().expenses.find((entry) => entry.id === id);
+        if (!current) return false;
+        const amount = patch.amount === undefined ? current.amount : Math.round(patch.amount);
+        if (!Number.isFinite(amount) || amount < 0) return false;
+        const at =
+          patch.at === undefined || !Number.isFinite(patch.at) ? current.at : Math.round(patch.at);
+        set((state) => ({
+          expenses: state.expenses.map((entry) =>
+            entry.id === id
+              ? {
+                  ...entry,
+                  ...patch,
+                  amount,
+                  at,
+                  note: (patch.note ?? entry.note).trim().slice(0, 140),
+                  custom: (patch.custom ?? entry.custom).trim().slice(0, 140),
+                }
+              : entry,
+          ),
+        }));
+        return true;
+      },
+      removeExpense: (id) => {
+        if (!get().expenses.some((entry) => entry.id === id)) return false;
+        set((state) => ({ expenses: state.expenses.filter((entry) => entry.id !== id) }));
+        return true;
+      },
       patchCustomer: (id, patch) => {
         const current = get().customers.find((entry) => entry.id === id);
         if (!current) return false;
@@ -617,7 +758,8 @@ export const useCafe = create<CafeStore>()(
     {
       name: "como-desk-v1",
       // Bump when DeskData changes shape; migrate() coerces older saves.
-      version: 1,
+      // 2 — every expense carries its own `custom` value.
+      version: 2,
       // Rehydrated payloads pass the same firewall as restored backups — an
       // old or hand-edited save becomes a complete DeskData instead of
       // crashing the desk on boot.

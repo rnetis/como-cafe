@@ -104,31 +104,95 @@ describe("open tickets", () => {
     assert.equal(move.note, `#${opened.order.number}`);
   });
 
-  it("keeps the books and loyalty of a closed tab untouched by later edits", () => {
+  it("reconciles the cellar when a settled ticket's lines are corrected", () => {
     const opened = useCafe.getState().openTicket({ lines: [espresso], note: "" });
     assert.ok(opened.ok);
     assert.ok(useCafe.getState().closeTicket(opened.order.id, settle).ok);
-    const closedTicket = ticket(opened.order.id)!;
-    const locked = useCafe.getState().patchTicket(opened.order.id, { lines: [espresso, latte] });
-    assert.deepEqual(locked, { ok: false, error: "locked" });
-    assert.equal(ticket(opened.order.id)!.lines.length, closedTicket.lines.length);
-    const noted = useCafe.getState().patchTicket(opened.order.id, { note: "paid late" });
-    assert.ok(noted.ok);
+    const before = ticket(opened.order.id)!;
+    const beans = beansOf();
+
+    const patched = useCafe.getState().patchTicket(opened.order.id, { lines: [espresso, latte] });
+    assert.ok(patched.ok);
+    const after = ticket(opened.order.id)!;
+    assert.equal(after.lines.length, 2);
+    assert.ok(after.total > before.total);
+    // The extra latte drank more beans, so the cellar followed the correction.
+    assert.ok(beansOf() < beans);
+    const adjust = useCafe.getState().moves.find((move) => move.note === `اصلاح فیش #${after.number}`)!;
+    assert.equal(adjust.reason, "adjust");
+    assert.ok(adjust.qty < 0);
+
+    // A note touch-up costs nothing and moves no stock.
+    const beansNoted = beansOf();
+    assert.ok(useCafe.getState().patchTicket(opened.order.id, { note: "paid late" }).ok);
     assert.equal(ticket(opened.order.id)!.note, "paid late");
-    assert.equal(ticket(opened.order.id)!.total, closedTicket.total);
+    assert.equal(ticket(opened.order.id)!.total, after.total);
+    assert.equal(beansOf(), beansNoted);
   });
 
-  it("deletes an open tab and leaves a closed one in the ledger", () => {
+  it("moves the guest's books with a corrected ticket", () => {
+    const before = useCafe.getState().customers.find((entry) => entry.id === "c-sara")!;
+    const opened = useCafe.getState().openTicket({ lines: [espresso], customerId: "c-sara", note: "" });
+    assert.ok(opened.ok);
+    assert.ok(useCafe.getState().closeTicket(opened.order.id, settle).ok);
+    const settled = useCafe.getState().customers.find((entry) => entry.id === "c-sara")!;
+    const closedTotal = ticket(opened.order.id)!.total;
+    assert.equal(settled.spent - before.spent, closedTotal);
+
+    assert.ok(useCafe.getState().patchTicket(opened.order.id, { lines: [espresso, latte] }).ok);
+    const corrected = ticket(opened.order.id)!;
+    const guest = useCafe.getState().customers.find((entry) => entry.id === "c-sara")!;
+    assert.equal(guest.spent - before.spent, closedTotal + (corrected.total - closedTotal));
+    assert.equal(guest.stamps, settled.stamps + 1); // the added latte is one more stamp
+  });
+
+  it("refuses a correction that would oversell the cellar", () => {
+    const opened = useCafe.getState().openTicket({ lines: [espresso], note: "" });
+    assert.ok(opened.ok);
+    assert.ok(useCafe.getState().closeTicket(opened.order.id, settle).ok);
+    const held = ticket(opened.order.id)!;
+    useCafe.getState().patchStockItem("beans", { onHand: 0 });
+
+    assert.deepEqual(useCafe.getState().patchTicket(opened.order.id, { lines: [espresso, latte] }), {
+      ok: false,
+      error: "stock",
+    });
+    assert.equal(ticket(opened.order.id)!.lines.length, held.lines.length);
+    assert.equal(ticket(opened.order.id)!.total, held.total);
+    assert.equal(beansOf(), 0);
+  });
+
+  it("deletes an open tab without a trace and a settled sale down to its bones", () => {
     const opened = useCafe.getState().openTicket({ lines: [espresso], note: "" });
     assert.ok(opened.ok);
     assert.equal(useCafe.getState().deleteTicket(opened.order.id), true);
     assert.equal(ticket(opened.order.id), undefined);
 
-    const second = useCafe.getState().openTicket({ lines: [espresso], note: "" });
+    const second = useCafe.getState().openTicket({ lines: [espresso], customerId: "c-ali", note: "" });
     assert.ok(second.ok);
     assert.ok(useCafe.getState().closeTicket(second.order.id, settle).ok);
-    assert.equal(useCafe.getState().deleteTicket(second.order.id), false);
-    assert.equal(ticket(second.order.id)?.status, "closed");
+    const guest = useCafe.getState().customers.find((entry) => entry.id === "c-ali")!;
+    const beans = beansOf();
+
+    assert.equal(useCafe.getState().deleteTicket(second.order.id), true);
+    assert.equal(ticket(second.order.id), undefined);
+    assert.ok(beansOf() > beans); // the ingredients came back
+    const after = useCafe.getState().customers.find((entry) => entry.id === "c-ali")!;
+    assert.ok(after.spent < guest.spent);
+    assert.equal(after.visits, guest.visits - 1);
+    assert.ok(after.stamps <= guest.stamps);
+    assert.equal(useCafe.getState().orders.some((order) => order.id === second.order.id), false);
+  });
+
+  it("keeps a settled ticket's guest fixed", () => {
+    const opened = useCafe.getState().openTicket({ lines: [espresso], note: "" });
+    assert.ok(opened.ok);
+    assert.ok(useCafe.getState().closeTicket(opened.order.id, settle).ok);
+    assert.deepEqual(useCafe.getState().patchTicket(opened.order.id, { customerId: "c-sara" }), {
+      ok: false,
+      error: "locked",
+    });
+    assert.equal(ticket(opened.order.id)!.customerId, undefined);
   });
 
   it("will not oversell: closing with empty stock reports back, the tab stays open", () => {

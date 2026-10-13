@@ -29,6 +29,7 @@ export function defaultSettings(): Settings {
     baud: 9600,
     autoPrint: false,
     autoSms: false,
+    expenseCustomLabel: "",
   };
 }
 
@@ -344,6 +345,7 @@ export function initialData(): DeskData {
         amount: 48_000_000,
         note: "اجاره فضا",
         method: "transfer",
+        custom: "آقای صادقی",
       },
       {
         id: "ex-power",
@@ -352,6 +354,7 @@ export function initialData(): DeskData {
         amount: 1_800_000,
         note: "برق و آب",
         method: "card",
+        custom: "",
       },
       {
         id: "ex-clean",
@@ -360,6 +363,7 @@ export function initialData(): DeskData {
         amount: 650_000,
         note: "شوینده",
         method: "cash",
+        custom: "",
       },
     ],
     moves: [
