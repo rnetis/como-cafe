@@ -7,6 +7,7 @@ import { earnedPoints, inSlowHour } from "./loyalty.ts";
 import { initialData, snapshotOf } from "./seed.ts";
 import { sanitizeDeskData } from "./sanitize.ts";
 import { linesOf, reconcileStock, rollbackSale } from "./tickets.ts";
+import { publishCustomers } from "./public-sync.ts";
 import type {
   CashMove,
   CheckoutInput,
@@ -789,3 +790,11 @@ export const useCafe = create<CafeStore>()(
     },
   ),
 );
+
+// Push customer stats to the public site whenever the books that feed them
+// change (guests edited, tickets opened/closed). Debounced in public-sync.
+useCafe.subscribe((state, prev) => {
+  if (state.customers !== prev.customers || state.orders !== prev.orders) {
+    publishCustomers(state.customers, state.orders);
+  }
+});

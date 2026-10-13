@@ -8,6 +8,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { nitro } from "nitro/vite";
 // @ts-expect-error JS plugin alongside the TS vite config
 import { grokPwaPlugin } from "./scripts/grok-pwa-plugin.mjs";
+import { publicApiPlugin } from "./scripts/public-api-plugin.mjs";
 // @ts-expect-error JS plugin alongside the TS vite config
 import { appEnvPlugin } from "./scripts/app-env-plugin.mjs";
 import { isMigrationFile } from "./scripts/migration-plan.mjs";
@@ -165,6 +166,9 @@ export default defineConfig(({ command, isPreview, mode }) => ({
     appEnvPlugin(),
     // PWA head + ?install=1 tutorial page; runs before Start/Nitro.
     grokPwaPlugin(),
+    // Public REST API (/api/public/*) in dev; production gets it from the
+    // same middleware via the nitro plugin below (build/preview only).
+    publicApiPlugin(),
     tailwindcss(),
     // Tauri build (--mode tauri): the shell (src-tauri) and the LAN file
     // server need a static, client-only bundle — SPA mode emits a prerendered

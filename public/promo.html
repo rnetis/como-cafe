@@ -1,0 +1,738 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>دفتر کافه کومو</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,600&family=Vazirmatn:wght@400;500;700;800&display=swap">
+
+<style>
+/* ------------------------------------------------------------------
+   دفتر کافه کومو — صفحهٔ معرفی
+   چیدمان: کاغذهای خودِ کافه. نوار تیرهٔ سرصفحه، یک فیش حرارتی
+   بهجای تصویر قهرمان، خطچینهای دفتر معین، و مُهر لاستیکی.
+   ------------------------------------------------------------------ */
+:root{
+  /* رنگ — از پالت خودِ برنامه (src/styles.css) */
+  --bg:#f3ecdf;
+  --surface:#faf6ee;
+  --surface-2:#ece4d6;
+  --fg:#141414;
+  --fg-soft:#3c342c;
+  --mute:#746b60;
+  --line:#d8d0c2;
+  --accent:#9c3b1e;
+  --good:#2f6b45;
+  --shade:rgba(20,20,20,.09);
+
+  /* قلم */
+  --f-display:"Fraunces","Vazirmatn",Georgia,serif;
+  --f-body:"Vazirmatn","Tahoma","DejaVu Sans",system-ui,sans-serif;
+  --f-mono:ui-monospace,SFMono-Regular,"DejaVu Sans Mono",Menlo,monospace;
+
+  /* اندازهها */
+  --step--1:clamp(.78rem,.76rem + .1vw,.86rem);
+  --step-0:clamp(.95rem,.92rem + .15vw,1.05rem);
+  --step-1:clamp(1.1rem,1.02rem + .4vw,1.3rem);
+  --step-2:clamp(1.4rem,1.2rem + .9vw,1.9rem);
+  --step-3:clamp(1.9rem,1.4rem + 2.2vw,3rem);
+  --gutter:clamp(18px,4vw,40px);
+  --radius:14px;
+
+  /* لبهٔ پارهٔ فیش */
+  --tear:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='8'><path d='M0 0h14L7 8z' fill='%23000'/></svg>");
+}
+
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#17130f;
+    --surface:#211b16;
+    --surface-2:#2b241d;
+    --fg:#f3eadd;
+    --fg-soft:#dbcebd;
+    --mute:#a2968a;
+    --line:#3b322a;
+    --accent:#d9764e;
+    --good:#7cbd92;
+    --shade:rgba(0,0,0,.45);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#17130f;
+  --surface:#211b16;
+  --surface-2:#2b241d;
+  --fg:#f3eadd;
+  --fg-soft:#dbcebd;
+  --mute:#a2968a;
+  --line:#3b322a;
+  --accent:#d9764e;
+  --good:#7cbd92;
+  --shade:rgba(0,0,0,.45);
+  color-scheme:dark;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+
+html,body{background:var(--bg)}
+body{margin:0;color:var(--fg)}
+
+.page{
+  direction:rtl;
+  background:var(--bg);
+  color:var(--fg);
+  font-family:var(--f-body);
+  font-size:var(--step-0);
+  line-height:1.75;
+  padding-block:0 80px;
+}
+.page a:not(.btn){color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+
+.wrap{
+  width:100%;
+  max-width:1120px;
+  margin-inline:auto;
+  padding-inline:var(--gutter);
+}
+section{padding-block:clamp(44px,7vw,80px)}
+.rule{height:1px;background:var(--line);border:0;margin:0}
+
+/* ---------- نوار سرصفحه ---------- */
+.topbar{
+  position:sticky;top:env(safe-area-inset-top,0px);z-index:20;
+  background:var(--bg);
+  border-bottom:1px solid var(--line);
+}
+@supports (background:color-mix(in oklab,red 50%,transparent)){
+  .topbar{background:color-mix(in oklab,var(--bg) 88%,transparent);backdrop-filter:blur(10px)}
+}
+.topbar .wrap{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding-block:12px;
+}
+.wordmark{
+  font-family:var(--f-display);font-weight:700;font-size:1.05rem;
+  letter-spacing:.22em;margin:0;
+}
+.wordmark span{font-family:var(--f-body);font-weight:500;letter-spacing:0;font-size:var(--step--1);color:var(--mute);margin-inline-start:10px}
+.topnav{display:flex;gap:18px;margin-inline-start:auto;flex-wrap:wrap}
+.topnav a{
+  font-size:var(--step--1);color:var(--mute);text-decoration:none;
+  padding-block:4px;border-bottom:1px solid transparent;
+}
+.topnav a:hover{color:var(--fg);border-bottom-color:var(--accent)}
+
+.chip{
+  display:inline-flex;align-items:center;gap:7px;
+  font-family:var(--f-mono);font-size:.72rem;letter-spacing:.04em;
+  border:1px solid var(--line);border-radius:999px;
+  padding:3px 10px;color:var(--mute);background:var(--surface);
+  font-variant-numeric:tabular-nums;
+}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--good)}
+
+/* ---------- قهرمان ---------- */
+.hero{padding-block:clamp(40px,6vw,72px) clamp(40px,6vw,72px)}
+.hero-grid{
+  display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.85fr);
+  gap:clamp(28px,5vw,64px);align-items:start;
+}
+@media (max-width:860px){.hero-grid{grid-template-columns:minmax(0,1fr)}}
+
+.mark{display:block;height:104px;width:auto;color:var(--fg);margin-bottom:22px}
+.mark text{fill:var(--bg)}
+
+.eyebrow{
+  font-family:var(--f-mono);font-size:.72rem;letter-spacing:.12em;
+  color:var(--mute);text-transform:uppercase;margin:0 0 12px;
+}
+.hero h1{
+  font-size:var(--step-3);line-height:1.25;font-weight:800;
+  letter-spacing:-.01em;margin:0 0 18px;text-wrap:balance;
+}
+.lead{font-size:var(--step-1);color:var(--fg-soft);max-width:46ch;margin:0 0 14px}
+.lead-list{list-style:none;padding:0;margin:0 0 26px;display:grid;gap:8px;max-width:46ch}
+.lead-list li{display:flex;gap:10px;font-size:var(--step-0);color:var(--fg-soft)}
+.lead-list li::before{content:"";flex:none;width:16px;height:1px;background:var(--accent);margin-top:.85em}
+
+.actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.btn{
+  display:inline-flex;align-items:center;gap:9px;
+  font-family:var(--f-body);font-size:var(--step-0);font-weight:700;
+  text-decoration:none;border-radius:999px;padding:12px 22px;
+  border:1px solid transparent;transition:transform .15s ease,background .15s ease;
+}
+.btn-primary{background:var(--fg);color:var(--bg)}
+.btn-primary:hover{transform:translateY(-1px)}
+.btn-ghost{border-color:var(--line);color:var(--fg);background:var(--surface)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+@media (prefers-reduced-motion:reduce){.btn,.btn-primary:hover{transition:none;transform:none}}
+
+/* ---------- فیش ---------- */
+.tape{
+  position:relative;background:var(--surface);
+  border:1px solid var(--line);border-radius:4px;
+  padding:0 0 22px;box-shadow:0 18px 40px -28px var(--shade);
+  font-size:.92rem;font-variant-numeric:tabular-nums;
+}
+.tape::after{
+  content:"";position:absolute;inset-inline:0;bottom:-7px;height:8px;
+  background:var(--surface);
+  -webkit-mask-image:var(--tear);mask-image:var(--tear);
+  -webkit-mask-size:14px 8px;mask-size:14px 8px;
+  -webkit-mask-repeat:repeat-x;mask-repeat:repeat-x;
+}
+.tape-head{
+  background:var(--fg);color:var(--bg);
+  padding:14px 20px;font-weight:700;
+  display:flex;justify-content:space-between;gap:12px;align-items:baseline;
+}
+.tape-head b{font-family:var(--f-display);letter-spacing:.12em;font-weight:700}
+.tape-head span{font-size:.78rem;opacity:.75;font-weight:500}
+.tape-body{padding:18px 20px 0}
+.tape-shop{text-align:center;color:var(--mute);font-size:.8rem;line-height:1.9}
+.tape-shop strong{
+  display:block;color:var(--fg);font-family:var(--f-display);
+  font-size:1rem;letter-spacing:.16em;margin-bottom:2px;
+}
+.tape-line{display:flex;justify-content:space-between;gap:12px;padding-block:5px}
+.tape-line > span:first-child{min-width:0}
+.tape-line em{
+  font-style:normal;color:var(--mute);font-family:var(--f-mono);
+  font-size:.74rem;margin-inline-start:6px;
+}
+.tape-sep{border:0;border-top:1px dashed var(--line);margin:12px 0}
+.tape-total{display:flex;justify-content:space-between;font-weight:800;font-size:1.05rem;padding-block:4px}
+.tape-note{
+  text-align:center;color:var(--mute);font-size:.78rem;
+  margin:14px 0 0;font-family:var(--f-body);
+}
+.tape-italic{
+  text-align:center;font-family:var(--f-display);font-style:italic;
+  font-size:1rem;color:var(--fg);margin:10px 0 0;
+}
+
+/* ---------- مُهر ---------- */
+.stamp{
+  display:inline-block;transform:rotate(-6deg);
+  border:2px solid var(--accent);color:var(--accent);
+  border-radius:8px;padding:6px 14px;
+  font-weight:800;font-size:.8rem;letter-spacing:.14em;
+  opacity:.85;margin-top:20px;
+}
+
+/* ---------- سرتیتر بخشها ---------- */
+.sec-head{max-width:60ch;margin-bottom:clamp(24px,4vw,42px)}
+.sec-head h2{
+  font-size:var(--step-2);font-weight:800;line-height:1.35;
+  margin:0 0 12px;text-wrap:balance;
+}
+.sec-head p{color:var(--fg-soft);margin:0;font-size:var(--step-0)}
+.sec-label{
+  font-family:var(--f-mono);font-size:.72rem;letter-spacing:.14em;
+  color:var(--accent);text-transform:uppercase;margin:0 0 10px;
+}
+
+/* ---------- هفت صفحه ---------- */
+.views{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));
+  gap:14px;
+}
+.view{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:20px 18px;display:flex;flex-direction:column;gap:8px;min-width:0;
+}
+.view svg{width:22px;height:22px;stroke:var(--fg);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.view h3{margin:0;font-size:1.02rem;font-weight:700;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.view h3 span{
+  font-family:var(--f-display);font-size:.72rem;letter-spacing:.1em;
+  color:var(--mute);font-weight:500;text-transform:uppercase;
+}
+.view p{margin:0;font-size:.9rem;color:var(--fg-soft);line-height:1.7}
+
+/* ---------- دفتر محلی ---------- */
+.split{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:clamp(24px,4vw,56px);align-items:start;
+}
+@media (max-width:820px){.split{grid-template-columns:minmax(0,1fr)}}
+.ledger{list-style:none;padding:0;margin:0;border-top:1px solid var(--line)}
+.ledger li{
+  display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr);
+  gap:14px;padding:14px 2px;border-bottom:1px dashed var(--line);
+}
+.ledger b{font-weight:700;font-size:.94rem}
+.ledger span{color:var(--fg-soft);font-size:.9rem}
+.ledger code{
+  font-family:var(--f-mono);font-size:.82em;background:var(--surface-2);
+  padding:1px 6px;border-radius:5px;color:var(--fg);
+}
+
+/* ---------- تصاویر ---------- */
+.shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+figure{margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+figure img{
+  width:100%;max-width:100%;height:auto;display:block;
+  border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);
+}
+figcaption{font-size:.85rem;color:var(--mute);line-height:1.7}
+figcaption b{color:var(--fg);font-weight:700}
+.phone{max-width:210px}
+
+/* ---------- کد ---------- */
+.code{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  overflow:hidden;min-width:0;
+}
+.code-head{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 14px;border-bottom:1px solid var(--line);
+  font-family:var(--f-mono);font-size:.76rem;color:var(--mute);
+}
+.code-head button{
+  margin-inline-start:auto;font-family:var(--f-body);font-size:.76rem;
+  background:var(--surface-2);color:var(--fg);border:1px solid var(--line);
+  border-radius:999px;padding:4px 12px;
+}
+.code-head button:hover{border-color:var(--accent);color:var(--accent)}
+.code pre{
+  margin:0;padding:16px 18px;overflow-x:auto;
+  direction:ltr;text-align:left;
+  font-family:var(--f-mono);font-size:.84rem;line-height:1.9;color:var(--fg);
+}
+.code pre .c{color:var(--mute)}
+
+/* ---------- دو بستهٔ ایرانی ---------- */
+.libs{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}
+.lib{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:24px 22px;display:flex;flex-direction:column;gap:12px;min-width:0;
+}
+.lib h3{margin:0;font-family:var(--f-mono);font-size:1rem;font-weight:700;letter-spacing:.02em}
+.lib .fa{font-family:var(--f-body);font-weight:700;font-size:1.02rem}
+.lib p{margin:0;font-size:.9rem;color:var(--fg-soft)}
+.facts{list-style:none;padding:0;margin:4px 0 0;display:grid;gap:7px;font-size:.85rem;color:var(--mute)}
+.facts li{display:flex;gap:9px}
+.facts li::before{content:"—";color:var(--accent);flex:none}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:0;list-style:none}
+.chips li{
+  font-family:var(--f-mono);font-size:.76rem;color:var(--fg-soft);
+  background:var(--surface);border:1px solid var(--line);
+  border-radius:999px;padding:5px 12px;
+}
+
+/* ---------- پایان ---------- */
+.foot{
+  border-top:1px solid var(--line);margin-top:20px;padding-top:34px;
+  display:flex;gap:20px;justify-content:space-between;flex-wrap:wrap;align-items:flex-end;
+}
+.foot p{margin:0;font-size:.86rem;color:var(--mute);max-width:44ch}
+.foot .sign{
+  font-family:var(--f-display);font-style:italic;font-size:1.05rem;color:var(--fg);
+  text-align:end;
+}
+.foot .sign span{
+  display:block;font-family:var(--f-mono);font-style:normal;
+  font-size:.7rem;letter-spacing:.16em;color:var(--mute);margin-top:6px;
+}
+</style>
+
+<div class="page">
+
+  <header class="topbar">
+    <div class="wrap">
+      <p class="wordmark">COMO<span>دفتر کافه کومو</span></p>
+      <nav class="topnav">
+        <a href="#views">صفحهها</a>
+        <a href="#books">دفتر</a>
+        <a href="#libs">بستهها</a>
+        <a href="#install">راهاندازی</a>
+      </nav>
+      <span class="chip">v1.5.1</span>
+    </div>
+  </header>
+
+  <!-- قهرمان -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <svg class="mark" viewBox="0 0 72 240" aria-hidden="true">
+          <rect x="1" y="1" width="54" height="214" rx="8" fill="currentColor"></rect>
+          <g text-anchor="middle" font-family="Fraunces, Georgia, serif" font-weight="700" font-size="34">
+            <text x="28" y="52">C</text>
+            <text x="28" y="98">O</text>
+            <text x="28" y="144">M</text>
+            <text x="28" y="190">O</text>
+          </g>
+          <circle cx="62" cy="222" r="7" fill="currentColor"></circle>
+        </svg>
+
+        <p class="eyebrow">Bandar Abbas · Est. 2026</p>
+        <h1>همهٔ کارِ کافه، روی یک میز.</h1>
+        <p class="lead">
+          نرمافزار ادارهٔ کافهٔ کومو: صندوق، فیش، انبار، دفتر، مهمان و پیامک. فارسی و
+          راستبهچپ، همه در یک صفحه.
+        </p>
+        <ul class="lead-list">
+          <li>دفتر روی همان دستگاهی میماند که پشتش نشستهاید؛ برای فروش به اینترنت نیاز ندارد.</li>
+          <li>تاریخ شمسی، اعداد فارسی و تومان از ابتدا در متن برنامهاند، نه یک افزودنی.</li>
+          <li>از پیشخوان ویندوز تا گوشی روی شبکهٔ کافه.</li>
+        </ul>
+        <div class="actions">
+          <a class="btn btn-primary" href="https://github.com/rnetis/como-cafe">دیدن مخزن در گیتهاب</a>
+          <a class="btn btn-ghost" href="#install">راهاندازی در سه فرمان</a>
+        </div>
+        <span class="stamp">آفلاین کار میکند</span>
+      </div>
+
+      <!-- فیش حرارتی قهرمان -->
+      <div class="tape" aria-label="نمونهٔ فیش چاپشده">
+        <div class="tape-head">
+          <b>COMO</b>
+          <span>فیش ۱۸۴۰ · بسته شد</span>
+        </div>
+        <div class="tape-body">
+          <p class="tape-shop">
+            <strong>COFFEE. PEOPLE. MOMENTS.</strong>
+            کوچه هفتم، خیابان طلوع، بندرعباس
+          </p>
+          <hr class="tape-sep">
+          <div class="tape-line"><span>۱ × اسپرسو <em>Espresso</em></span><span>۲۲۵٬۰۰۰</span></div>
+          <div class="tape-line"><span>۱ × کورتادو <em>Cortado</em></span><span>۲۸۰٬۰۰۰</span></div>
+          <div class="tape-line"><span>۱ × لاته سیروپ <em>Latte + syrup</em></span><span>۳۱۰٬۰۰۰</span></div>
+          <div class="tape-line"><span>۱ × کاپوچینو <em>Cappuccino</em></span><span>۲۸۵٬۰۰۰</span></div>
+          <hr class="tape-sep">
+          <div class="tape-total"><span>قابل پرداخت</span><span>۱٬۱۰۰٬۰۰۰ تومان</span></div>
+          <div class="tape-line"><span>روش پرداخت</span><span>کارت</span></div>
+          <div class="tape-line"><span>مهمان</span><span>علی رضایی · کوکو</span></div>
+          <hr class="tape-sep">
+          <p class="tape-italic">قهوه بهانه است. مکث اصل ماجراست.</p>
+          <p class="tape-note">۱۳ مهر ۱۴۰۵ · ۱۸:۴۵</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- هفت صفحه -->
+  <section id="views">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="sec-label">Seven views</p>
+        <h2>هفت صفحه، بهاندازهٔ یک شیفت کاری</h2>
+        <p>
+          هر بخش کارِ روزانهٔ کافه یکی از این صفحههاست. کنار هم مینشینند و از هم
+          تغذیه میکنند: فروش صندوق، از انبار کم میکند و امتیاز مهمان را بالا میبرد.
+        </p>
+      </div>
+
+      <div class="views">
+        <article class="view">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h11v5.5A5.5 5.5 0 0 1 9.5 20h-0A5.5 5.5 0 0 1 4 14.5z"/><path d="M15 10h2.2a2.8 2.8 0 0 1 0 5.6H15"/><path d="M3 22h14"/></svg>
+          <h3>صندوق <span>Desk</span></h3>
+          <p>منوی دستهبندیشده، افزودنیها، تخفیف درصدی، یادداشت فیش، و سه روش پرداخت: نقد، کارت، آنلاین.</p>
+        </article>
+
+        <article class="view">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h10a2 2 0 0 1 2 2v13a2 2 0 0 0 2 2H7a2 2 0 0 1-2-2z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>
+          <h3>فیش <span>Tickets</span></h3>
+          <p>فیشهای باز روی میزها تا لحظهٔ بسته شدن، و بعدش چاپ حرارتی و پالس کشوی نقد.</p>
+        </article>
+
+        <article class="view">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5"/><path d="M12 12v9"/></svg>
+          <h3>انبار <span>Cellar</span></h3>
+          <p>مواد اولیه بر حسب گرم، میلیلیتر و عدد؛ نقطهٔ سفارش، و کسر خودکار بر اساس دستور ساخت هر نوشیدنی.</p>
+        </article>
+
+        <article class="view">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.5C10.2 5 7.8 4.4 5 4.4v14c2.8 0 5.2.6 7 2 1.8-1.4 4.2-2 7-2v-14c-2.8 0-5.2.6-7 2z"/><path d="M12 6.5v14"/></svg>
+          <h3>دفتر <span>Books</span></h3>
+          <p>فروش، خرید، هزینههای جاری و کشوی نقد، با نمودار و مقایسهٔ بازهها؛ برای وقتی که باید حساب پس بدهید.</p>
+        </article>
+
+        <article class="view">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9.2" cy="8" r="3.2"/><path d="M3.6 20a5.6 5.6 0 0 1 11.2 0"/><path d="M16.2 5.6a3.2 3.2 0 0 1 0 5.8"/><path d="M17.6 20a5.6 5.6 0 0 0-2-4.3"/></svg>
+          <h3>مهمان <span>Guests</span></h3>
+          <p>پروندهٔ هر مشتری با شماره، امتیاز، تعداد مراجعه و یادداشت؛ سطحها از «مهمان» تا «حلقهٔ درونی».</p>
+        </article>
+
+        <article class="view">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5a3 3 0 0 1-3 3H9.5L4 21V6.5a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3z"/><path d="M8.5 9.5h7M8.5 13h4"/></svg>
+          <h3>پیامک <span>Wire</span></h3>
+          <p>کمپین گروهی بر اساس سطح و سابقه، پیام مناسبتی تولد، و ارسال فیش برای مهمان، از طریق sms.ir.</p>
+        </article>
+
+        <article class="view">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.1"/><path d="M12 2.6v3M12 18.4v3M2.6 12h3M18.4 12h3M5.4 5.4l2.1 2.1M16.5 16.5l2.1 2.1M18.6 5.4l-2.1 2.1M7.5 16.5l-2.1 2.1"/></svg>
+          <h3>خانه <span>House</span></h3>
+          <p>منو و قیمتها، دستمزد، هزینههای ثابت، زبان، پشتیبانگیری و برونبری دفتر.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- دفتر محلی -->
+  <section id="books">
+    <div class="wrap split">
+      <div>
+        <div class="sec-head">
+          <p class="sec-label">Local first</p>
+          <h2>دفتر، جایی که باید باشد: پیش خودتان</h2>
+          <p>
+            هیچ سروری در میان نیست. کل دفتر کافه در مرورگر همان دستگاه ذخیره میشود و
+            برای دیدن فروش امروز به اینترنت و حساب کاربری نیاز ندارید. این انتخاب
+            آگاهانه است، چون پیشخوان کافه جای قطعشدنِ اینترنت است.
+          </p>
+        </div>
+        <p style="color:var(--fg-soft);font-size:.92rem;margin:0">
+          همراه این انتخاب، لایههای محافظتی هم آمدهاند تا دادهٔ خراب یا فایل ناقص،
+          دفتر را از کار نیندازد.
+        </p>
+      </div>
+
+      <ul class="ledger">
+        <li>
+          <b>ذخیرهٔ نسخهدار</b>
+          <span>دفتر با <code>version</code> و <code>migrate</code> ذخیره میشود؛ دفترهای قدیمی هنگام باز شدن به شکل تازه درمیآیند.</span>
+        </li>
+        <li>
+          <b>پشتیبان روزانه</b>
+          <span>هر روز یک نسخه، تا سه روز عقب. از «خانه» می توانید آخرین پشتیبان را برگردانید.</span>
+        </li>
+        <li>
+          <b>فایروال داده</b>
+          <span>هر فایل بازگردانیشده یا ذخیرهٔ قدیمی، پیش از ورود ساختاراً پاکسازی میشود.</span>
+        </li>
+        <li>
+          <b>بدون شکستن</b>
+          <span>پرشدن حجم ذخیرهگاه یا خواندهٔ ناخوانا، کافه را با صفحهٔ سفید رها نمیکند.</span>
+        </li>
+        <li>
+          <b>برونبری دستی</b>
+          <span>دانلود کل دفتر بهصورت یک فایل، و بازگرداندنش روی دستگاه دیگر.</span>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- تصاویر -->
+  <section>
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="sec-label">Screens</p>
+        <h2>همان چیزی که پشت پیشخوان میبینید</h2>
+        <p>سه صفحه از خود برنامه، بدون بازسازی و ماکت.</p>
+      </div>
+      <div class="shots">
+        <figure>
+          <img src="promo/desk.png" alt="صفحهٔ صندوق: منوی نوشیدنیها، فیش باز، و روشهای پرداخت" loading="lazy">
+          <figcaption><b>صندوق.</b> انتخاب از منو، فیش کنارِ دست، و پرداخت نقد/کارت/آنلاین.</figcaption>
+        </figure>
+        <figure>
+          <img src="promo/guest.png" alt="صفحهٔ مهمانها: پروندهٔ مشتری، امتیاز، سطح و تاریخ تولد" loading="lazy">
+          <figcaption><b>مهمانها.</b> امتیاز، سطح، تاریخ تولد و آخرین فیشهای هر مشتری.</figcaption>
+        </figure>
+        <figure>
+          <img src="promo/receipt.png" alt="پنجرهٔ چاپ فیش با گزینههای چاپ حرارتی، پورت سریال و پیامک" loading="lazy">
+          <figcaption><b>فیش.</b> چاپ حرارتی، خروجی ESC/POS، پورت سریال، یا ارسال پیامکی.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- سختافزار -->
+  <section>
+    <div class="wrap split">
+      <div>
+        <div class="sec-head">
+          <p class="sec-label">Hardware</p>
+          <h2>به سختافزارِ سرِ پیشخوان وصل میشود</h2>
+          <p>
+            نرمافزار کافه اگر به چاپگر و کارتخوان وصل نشود، فقط یک دفتر است. این
+            بخشها همانجا کار میکنند که کافه لازم دارد.
+          </p>
+        </div>
+        <ul class="ledger">
+          <li><b>چاپگر حرارتی</b><span>خروجی ESC/POS روی پورت سریال، همراه با پالس باز کردن کشوی نقد.</span></li>
+          <li><b>کارتخوان</b><span>ارسال مبلغ به پایانهٔ کارتخوان PEC روی شبکهٔ محلی یا پورت سریال ۱۹۲۰۰ baud.</span></li>
+          <li><b>درگاه پرداخت پارسیان</b><span>درخواست پرداخت، تأیید و بازگشت وجه برای پرداختهای آنلاین.</span></li>
+          <li><b>پیامک</b><span>ارسالیها از یک تابع سرور میگذرند تا کلید API هیچوقت به مرورگر نرسد.</span></li>
+        </ul>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:18px;align-items:flex-start">
+        <figure class="phone">
+          <img src="promo/mobile-desk.png" alt="نمای صندوق روی گوشی" loading="lazy">
+          <figcaption>همان دفتر روی گوشی، از طریق شبکهٔ محلی کافه یا نسخهٔ نصبشدنی وب.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- دو بسته -->
+  <section id="libs">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="sec-label">Two packages</p>
+        <h2>دو کتابخانه که کنار همین پروژه درآمدند</h2>
+        <p>
+          برای وصل شدن به دنیای پرداخت ایران، دو بستهٔ جدا داخل مخزن نوشته شده که
+          خودشان بهتنهایی قابل استفادهاند.
+        </p>
+      </div>
+
+      <div class="libs">
+        <article class="lib">
+          <h3>pec_ir</h3>
+          <p class="fa">کلاینت درگاه پرداخت پارسیان</p>
+          <p>پوشش سه کار اصلی درگاه تجارت الکترونیک پارسیان، با یک کلید که از سمت سرور خوانده میشود.</p>
+          <ul class="facts">
+            <li>درخواست پرداخت</li>
+            <li>تأیید تراکنش</li>
+            <li>بازگشت وجه</li>
+          </ul>
+        </article>
+
+        <article class="lib">
+          <h3>pec-pcpos</h3>
+          <p class="fa">پروتکل کارتخوان PEC، بازنویسیشده در جاوااسکریپت</p>
+          <p>
+            پیادهسازی دوبارهٔ کتابخانهٔ داتنتی <span style="font-family:var(--f-mono);font-size:.85em">Intek.PcPosLibrary</span> و
+            سرویس پلی بین فایل، که همراه پایانههای کارتخوان PEC در ایران میآید. پروتکل
+            روی TCP یا سریال، و جدول تشخیص بانک بر اساس پیششمارهٔ کارت.
+          </p>
+          <ul class="facts">
+            <li>همان پروتکل tag-length-value، روی شبکه یا سریال</li>
+            <li>جدول پیششمارهٔ ۲۲ بانک ایرانی</li>
+            <li>۷۵ تست سبز</li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- نصب -->
+  <section id="install">
+    <div class="wrap split">
+      <div>
+        <div class="sec-head">
+          <p class="sec-label">Install</p>
+          <h2>راهاندازی</h2>
+          <p>نود ۲۲ و npm کافی است. نسخهٔ دسکتاپ هم برای ویندوز، مک و لینوکس ساخته میشود.</p>
+        </div>
+        <ul class="chips">
+          <li>TanStack Start</li>
+          <li>React 19</li>
+          <li>TypeScript</li>
+          <li>Tailwind v4</li>
+          <li>Radix</li>
+          <li>zustand</li>
+          <li>Vite</li>
+          <li>Tauri v2</li>
+          <li>Nitro / Vercel</li>
+          <li>Node 22</li>
+        </ul>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+        <div class="code">
+          <div class="code-head">
+            <span>ترمینال</span>
+            <button type="button" data-copy="git clone https://github.com/rnetis/como-cafe.git&#10;cd como-cafe&#10;npm install&#10;npm run dev">کپی</button>
+          </div>
+          <pre><span class="c"># گرفتن مخزن و بالا آوردن</span>
+git clone https://github.com/rnetis/como-cafe.git
+cd como-cafe
+npm install
+npm run dev        <span class="c"># روی 0.0.0.0:8080</span></pre>
+        </div>
+
+        <div class="code">
+          <div class="code-head">
+            <span>بررسی و بستهبندی</span>
+            <button type="button" data-copy="npm run typecheck&#10;npm test&#10;npm run build&#10;npm run tauri -- build">کپی</button>
+          </div>
+          <pre>npm run typecheck  <span class="c"># tsc --noEmit</span>
+npm test           <span class="c"># suiteهای node:test</span>
+npm run build      <span class="c"># بیلد + مهاجرتهای دیتابیس</span>
+npm run tauri -- build  <span class="c"># بستهٔ دسکتاپ</span></pre>
+        </div>
+
+        <p style="font-size:.85rem;color:var(--mute);margin:0">
+          برچسبهای نسخه (مثل <code style="font-family:var(--f-mono)">v1.5.1</code>) از طریق
+          گیتهاب اکشنز، نصبکنندهٔ ویندوز، مک و لینوکس را میسازند. نصبکنندهها امضا نشدهاند.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <footer class="foot">
+      <p>
+        مخزن: <a href="https://github.com/rnetis/como-cafe" style="color:var(--accent)">github.com/rnetis/como-cafe</a><br>
+        ساخته شده برای کافهٔ کومو، کوچه هفتم، خیابان طلوع، بندرعباس.
+      </p>
+      <p class="sign">
+        قهوه فقط یک نوشیدنی نیست. یک مکث است.
+        <span>COFFEE. PEOPLE. MOMENTS.</span>
+      </p>
+    </footer>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // دکمههای کپی فرمانها
+  document.querySelectorAll("[data-copy]").forEach(function (button) {
+    var original = button.textContent;
+    button.addEventListener("click", function () {
+      var text = button.getAttribute("data-copy") || "";
+
+      function fallback() {
+        var pre = button.closest(".code").querySelector("pre");
+        var range = document.createRange();
+        range.selectNodeContents(pre);
+        var selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        button.textContent = "انتخاب شد";
+        window.setTimeout(function () {
+          button.textContent = original;
+        }, 1600);
+      }
+
+      function done() {
+        button.textContent = "کپی شد";
+        window.setTimeout(function () {
+          button.textContent = original;
+        }, 1600);
+      }
+
+      try {
+        var result = navigator.clipboard && navigator.clipboard.writeText(text);
+        if (result && typeof result.then === "function") {
+          result.then(done, fallback);
+        } else {
+          fallback();
+        }
+      } catch (error) {
+        fallback();
+      }
+    });
+  });
+})();
+</script>
