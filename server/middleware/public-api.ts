@@ -12,7 +12,15 @@
  * guest already knows.
  */
 import { CATEGORIES, MENU } from "../../src/lib/catalog.ts";
-import { getSql } from "../../src/lib/db.ts";
+
+/**
+ * `src/lib/db.ts` boots PGLite the moment it loads in Node. A module-scope
+ * import here would do that while Nitro builds, because `serverDir` below
+ * auto-registers this file — and the prerender crawl of `/` then dies on the
+ * bundled `pglite.data` the Vercel output doesn't ship. Import it per request,
+ * for the two endpoints that actually query.
+ */
+const loadSql = () => import("../../src/lib/db.ts").then((m) => m.getSql());
 
 interface PublicApiEvent {
   url: URL;
@@ -73,7 +81,7 @@ async function customer(event: PublicApiEvent): Promise<Response> {
   }
   const phone = typeof body.phone === "string" ? body.phone.replace(/\D/g, "") : "";
   if (phone.length < 8) return json({ ok: false, error: "bad-phone" }, 400);
-  const sql = await getSql();
+  const sql = await loadSql();
   const rows = await sql.query<CustomerRow>(
     "select phone, name, points, stamps, visits, spent, last_visit, birthday from public_customers where phone = $1",
     [phone],
@@ -128,7 +136,7 @@ async function sync(event: PublicApiEvent): Promise<Response> {
     }))
     .filter((c) => c.phone.length >= 8);
   if (rows.length === 0) return json({ ok: true, synced: 0 });
-  const sql = await getSql();
+  const sql = await loadSql();
   await sql.query("begin");
   try {
     for (const c of rows) {
