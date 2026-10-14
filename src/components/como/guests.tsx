@@ -145,7 +145,10 @@ function Profile({ guest, onBack }: { guest: Customer; onBack: () => void }) {
   const patchCustomer = useCafe((state) => state.patchCustomer);
   const removeCustomer = useCafe((state) => state.removeCustomer);
   const addCustomerCredit = useCafe((state) => state.addCustomerCredit);
-  const creditMoves = useCafe((state) => state.customerCreditMoves.filter((move) => move.customerId === guest.id).slice(0, 8));
+  // Select the stable array, then filter in the render body — an inline
+  // `.filter()` would mint a fresh snapshot each read and loop React.
+  const allCreditMoves = useCafe((state) => state.customerCreditMoves);
+  const creditMoves = allCreditMoves.filter((move) => move.customerId === guest.id).slice(0, 8);
   const logSms = useCafe((state) => state.logSms);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(guest.name);
