@@ -18,11 +18,6 @@ function check(name, pass, extra = "") {
   if (!pass) process.exitCode = 1;
 }
 
-const readStore = () => {
-  const raw = localStorage.getItem("como-desk-v1");
-  return raw ? JSON.parse(raw).state : null;
-};
-
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
 const consoleErrors = [];

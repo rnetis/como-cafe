@@ -271,6 +271,7 @@ export function applyCheckout(
         favoriteId: top?.itemId,
         giftYear: 0,
         walletBalance: 0,
+        care: { birthday: 0, winback: 0, milestone: 0, milestoneVisits: 0 },
       },
       ...customers,
     ];

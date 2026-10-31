@@ -1,9 +1,9 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { readAutoBackup } from "@/lib/autosave";
 import { Btn, Field, fieldClass } from "@/components/como/bits";
 import { CATEGORIES } from "@/lib/catalog";
-import { formatMenu, formatToman, formatWhen, tx, unitLabel } from "@/lib/format";
+import { formatToman, formatWhen, tx, unitLabel } from "@/lib/format";
 import { buildReceiptDoc, printReceipt } from "@/lib/receipt";
 import { snapshotOf } from "@/lib/seed";
 import { useCafe } from "@/lib/store";
@@ -27,10 +27,13 @@ export function House() {
   const [editing, setEditing] = useState(false);
   const [componentSku, setComponentSku] = useState(store.stock[0]?.sku ?? "");
   const [componentQty, setComponentQty] = useState(1);
-  const costOf = (sku: string) => store.stock.find((item) => item.sku === sku)?.cost ?? 0;
+  const costOf = useCallback(
+    (sku: string) => store.stock.find((item) => item.sku === sku)?.cost ?? 0,
+    [store.stock],
+  );
   const recipeCost = useMemo(
     () => draft.recipe.reduce((sum, use) => sum + costOf(use.sku) * use.qty, 0),
-    [draft.recipe, store.stock],
+    [draft.recipe, costOf],
   );
   const saveDraft = () => {
     if (

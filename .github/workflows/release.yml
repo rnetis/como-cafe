@@ -32,6 +32,9 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v7
+        with:
+          # `pec_ir` (the PEC payment-gateway client) is a git submodule.
+          submodules: true
 
       - name: Install Linux build dependencies
         if: runner.os == 'Linux'
@@ -73,6 +76,13 @@ jobs:
           releaseName: COMO Desk ${{ github.ref_name }}
           releaseBody: |
             COMO Desk ${{ github.ref_name }} for Windows, macOS (Intel and Apple Silicon), and Linux.
+
+            Highlights:
+            - Customer care: automatic birthday, win-back and visit-milestone texts (opt-in for books created before this release, one text per guest per day, 12/day cap). Hand-sent birthday/quiet rounds now stamp the guests, so the automation never repeats them.
+            - PEC card terminal bridge: correct reply framing, a 90 s card-sale timeout, and `pec-pos@0.1.0` / `pec-pcpos` resolve reliably in dev, Vercel and desktop builds.
+            - SMS.ir fixes: the like-to-like endpoint spelling (`/v1/send/likeToLike`) and `lineNumber` sent as a string — personalised care rounds send again.
+            - Safer data migration: existing SMS preferences are kept exactly as set.
+            - Repo cleanup: Rust build artifacts no longer in the source tree.
 
             Download the installer for your platform from the assets below. The installers are unsigned and may show the operating system's standard first-run security prompt.
           releaseDraft: false

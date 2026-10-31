@@ -233,6 +233,11 @@ if (typeof window === "undefined" && dbSource === "pglite") {
   globalBoot.__pgBootstrapPromise__ ??= ensureDbReady().catch((err) => {
     globalBoot.__pgBootstrapPromise__ = undefined;
     console.error("[db] PGLite bootstrap failed:", err);
-    throw err;
+    // Swallow, deliberately. Rethrowing here is a module-scope rejection with
+    // no handler: it takes the whole Node process down (seen in the built
+    // Nitro output when the bundled `pglite.data` asset is missing), so one
+    // DB-backed request would kill every route on the desk. The next
+    // getSql()/ensureDbReady() call retries and the caller returns a clean
+    // 500 instead.
   });
 }

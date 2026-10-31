@@ -36,6 +36,7 @@ function validSnapshot(): DeskData {
         referral: "C0001",
         giftYear: 0,
         walletBalance: 0,
+        care: { birthday: 0, winback: 0, milestone: 0, milestoneVisits: 0 },
       },
     ],
     orders: [
@@ -118,6 +119,8 @@ describe("sanitizeDeskData", () => {
     assert.equal(out.orders[0]?.total, 0); // negative clamped
     assert.deepEqual(out.customers.map((entry) => entry.id), ["c-2"]);
     assert.equal(out.customers[0]?.points, 0); // "many" → 0
+    // A customer with no care history still comes back stamp-complete.
+    assert.deepEqual(out.customers[0]?.care, { birthday: 0, winback: 0, milestone: 0, milestoneVisits: 0 });
   });
 
   it("coerces settings and clamps impossible values", () => {
@@ -132,12 +135,16 @@ describe("sanitizeDeskData", () => {
         slowStart: 55,
         slowEnd: -2,
         smsApiKey: 123,
+        careOn: "no",
+        careQuietDays: 9999,
       },
     });
     assert.ok(out);
     assert.equal(out.settings.lang, "fa"); // unknown → default
     assert.equal(out.settings.paper, 80);
     assert.equal(out.settings.baud, 9600);
+    assert.equal(out.settings.careOn, true); // non-boolean → default (on)
+    assert.equal(out.settings.careQuietDays, 120); // clamped
     assert.equal(out.settings.stampGoal, 1); // min 1
     assert.equal(out.settings.pointsPer, 0); // negative clamped
     assert.equal(out.settings.slowStart, 23);
@@ -157,6 +164,7 @@ describe("sanitizeDeskData", () => {
           stamps: 2.7,
           smsOptIn: "yes",
           referral: 7,
+          care: { birthday: "soon", winback: -5, milestone: "x", milestoneVisits: null },
         },
       ],
       credit: { value: "250", at: "long ago" },
@@ -168,6 +176,7 @@ describe("sanitizeDeskData", () => {
     assert.equal(guest.stamps, 2.7);
     assert.equal(guest.smsOptIn, true); // non-boolean → default true
     assert.equal(guest.referral, "7");
+    assert.deepEqual(guest.care, { birthday: 0, winback: 0, milestone: 0, milestoneVisits: 0 });
     assert.equal(out.credit?.value, 250);
     assert.ok(out.credit && out.credit.at > 0);
   });

@@ -4,6 +4,7 @@ import { applyCheckout, priceLines, type CheckoutError } from "./checkout.ts";
 import { expectedDrawer } from "./figures.ts";
 import { startOfDay, uid, normPhone } from "./format.ts";
 import { earnedPoints, inSlowHour } from "./loyalty.ts";
+import { backfillCare, careIsBlank, maxCare, migrateDeskData } from "./migrate.ts";
 import { initialData, snapshotOf } from "./seed.ts";
 import { sanitizeDeskData } from "./sanitize.ts";
 import { linesOf, reconcileStock, rollbackSale } from "./tickets.ts";
@@ -55,6 +56,37 @@ export type TicketPatch = {
 
 type TicketPatchError = "empty" | "missing" | "locked" | "stock";
 type TicketPatchResult = { ok: true; order: Order } | { ok: false; error: TicketPatchError };
+
+/** One care message that just went out, used to stamp a guest's care history. */
+export type CareMark = {
+  id: string;
+  kind: "birthday" | "winback" | "milestone";
+  at: number;
+  /** The visit count a milestone text was for (10, 25, 50, 100). */
+  milestoneVisits?: number;
+};
+
+/**
+ * Apply care stamps to the matching guests. Newest stamp wins, so a late
+ * duplicate can never move a guest's care history backwards.
+ */
+function stampCare(customers: Customer[], marks: CareMark[]): Customer[] {
+  if (marks.length === 0) return customers;
+  return customers.map((entry) => {
+    const hits = marks.filter((hit) => hit.id === entry.id);
+    if (hits.length === 0) return entry;
+    const care = { ...entry.care };
+    for (const hit of hits) {
+      if (hit.kind === "birthday") care.birthday = Math.max(care.birthday, hit.at);
+      else if (hit.kind === "winback") care.winback = Math.max(care.winback, hit.at);
+      else {
+        care.milestone = Math.max(care.milestone, hit.at);
+        care.milestoneVisits = hit.milestoneVisits ?? care.milestoneVisits;
+      }
+    }
+    return { ...entry, care };
+  });
+}
 
 /** The shape `partialize` writes: the whole DeskData minus the transient receipt id. */
 type PersistedDesk = DeskData;
@@ -129,6 +161,15 @@ type Actions = {
   patchExpense: (id: string, patch: ExpensePatch) => boolean;
   removeExpense: (id: string) => boolean;
   patchCustomer: (id: string, patch: Partial<Customer>) => boolean;
+  /** Stamps the care messages that just went out, so the automation knows
+   *  not to send them again before they are due. */
+  markCare: (entries: CareMark[]) => void;
+  /**
+   * Records a whole care run in ONE store write: the SMS log row and the
+   * stamps it earned. `runCare` uses this so the log can never show a message
+   * the automation would send again (or a stamp for a message that failed).
+   */
+  recordCare: (entry: { log: Omit<SmsLog, "id" | "at">; marks: CareMark[] }) => void;
   addCustomer: (input: {
     name: string;
     phone: string;
@@ -660,6 +701,15 @@ export const useCafe = create<CafeStore>()(
         set((state) => ({ customers: state.customers.map((entry) => entry.id === id ? { ...entry, ...patch, name, phone } : entry) }));
         return true;
       },
+      markCare: (entries) => {
+        if (entries.length === 0) return;
+        set((state) => ({ customers: stampCare(state.customers, entries) }));
+      },
+      recordCare: ({ log, marks }) =>
+        set((state) => ({
+          smsLogs: [{ ...log, id: uid("sms"), at: Date.now() }, ...state.smsLogs].slice(0, 80),
+          customers: stampCare(state.customers, marks),
+        })),
       addCustomer: (input) => {
         const phone = normPhone(input.phone);
         if (!/^09\d{9}$/.test(phone)) return "bad";
@@ -684,6 +734,7 @@ export const useCafe = create<CafeStore>()(
               referral: `C${phone.slice(-4)}`,
               giftYear: 0,
               walletBalance: 0,
+              care: { birthday: 0, winback: 0, milestone: 0, milestoneVisits: 0 },
             },
             ...state.customers,
           ],
@@ -751,7 +802,23 @@ export const useCafe = create<CafeStore>()(
         // merged raw into the books.
         const data = sanitizeDeskData(raw);
         if (!data) return false;
-        set({ ...data, receiptId: null });
+        // Restoring an old file must not rewind customer care: per guest the
+        // newest stamp (live vs imported) wins, so an old backup can never
+        // un-stamp a message that already went out. A legacy backup whose
+        // guests have no care history at all is stamped as if care had just
+        // run — restoring it must not mail a backlog of birthdays and
+        // win-backs.
+        const now = Date.now();
+        const live = new Map(get().customers.map((guest) => [guest.id, guest.care]));
+        const customers = data.customers.map((guest) => {
+          const current = live.get(guest.id);
+          const merged = current ? maxCare(current, guest.care) : guest.care;
+          return {
+            ...guest,
+            care: careIsBlank(guest.care) ? backfillCare(merged, guest.visits, now) : merged,
+          };
+        });
+        set({ ...data, customers, receiptId: null });
         return true;
       },
       reset: () => set({ ...initialData(), receiptId: null }),
@@ -760,11 +827,14 @@ export const useCafe = create<CafeStore>()(
       name: "como-desk-v1",
       // Bump when DeskData changes shape; migrate() coerces older saves.
       // 2 — every expense carries its own `custom` value.
-      version: 2,
+      // 3 — customer care ships: pre-v3 saves get it OFF (existing books opt
+      //     in through the Guests screen, no surprise paid texts) with every
+      //     guest stamped as "just cared for"; stored settings are untouched.
+      version: 3,
       // Rehydrated payloads pass the same firewall as restored backups — an
       // old or hand-edited save becomes a complete DeskData instead of
       // crashing the desk on boot.
-      migrate: (persisted) => sanitizeDeskData(persisted) ?? initialData(),
+      migrate: (persisted, oldVersion) => migrateDeskData(persisted, oldVersion),
       // merge runs on EVERY hydration (migrate only fires on version
       // mismatch), so a same-version corrupt-but-parseable save is sanitized
       // here too — nothing reaches the store unvalidated.

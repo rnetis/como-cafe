@@ -1,5 +1,6 @@
 import { defaultSettings } from "./seed.ts";
 import type {
+  CareStamp,
   CashMove,
   CategoryId,
   CloseOut,
@@ -44,7 +45,18 @@ const PAYS: Pay[] = ["cash", "card", "online", "wallet"];
 const UNITS: Unit[] = ["g", "ml", "pcs"];
 const REASONS: StockReason[] = ["sale", "purchase", "waste", "adjust"];
 const EXPENSE_CATS: ExpenseCategory[] = ["rent", "payroll", "utilities", "supplies", "other"];
-const SMS_KINDS: SmsKind[] = ["receipt", "welcome", "loyalty", "campaign", "birthday"];
+const SMS_KINDS: SmsKind[] = ["receipt", "welcome", "loyalty", "campaign", "birthday", "care"];
+
+/** Care stamps are timestamps — a missing or bogus one means "never sent". */
+function careStamp(raw: unknown): CareStamp {
+  const source = row(raw);
+  return {
+    birthday: source ? nonNegative(source.birthday) : 0,
+    winback: source ? nonNegative(source.winback) : 0,
+    milestone: source ? nonNegative(source.milestone) : 0,
+    milestoneVisits: source ? nonNegative(source.milestoneVisits) : 0,
+  };
+}
 
 type Row = Record<string, unknown>;
 
@@ -139,6 +151,7 @@ function customers(raw: unknown): Customer[] {
       favoriteId: typeof entry.favoriteId === "string" ? entry.favoriteId : undefined,
       giftYear: nonNegative(entry.giftYear),
       walletBalance: nonNegative(entry.walletBalance),
+      care: careStamp(entry.care),
     }))
     .slice(0, CUSTOMERS_CAP);
 }
@@ -320,6 +333,8 @@ function settings(raw: unknown): Settings {
     baud: patch.baud === 115200 ? 115200 : 9600,
     autoPrint: bool(patch.autoPrint, base.autoPrint),
     autoSms: bool(patch.autoSms, base.autoSms),
+    careOn: bool(patch.careOn, base.careOn),
+    careQuietDays: Math.min(120, Math.max(1, Math.round(num(patch.careQuietDays, base.careQuietDays)))),
     expenseCustomLabel: str(patch.expenseCustomLabel, base.expenseCustomLabel).slice(0, 40),
   };
 }

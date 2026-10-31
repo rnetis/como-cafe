@@ -20,7 +20,7 @@
     "preview:stop": "node scripts/preview.mjs stop",
     "typecheck": "node scripts/with-app-env.mjs tsc --noEmit",
     "check:auth": "node scripts/check-auth-invariant.mjs",
-    "test": "node --test 'scripts/**/*.test.mjs' && node --experimental-strip-types --test src/lib/app-data/app-data.test.ts src/lib/app-data/readiness-schedule.test.ts src/lib/auth/gate-identity.test.ts src/lib/auth/sign-in-gate.test.ts src/lib/sanitize.test.ts src/lib/tickets.test.ts",
+    "test": "node --test 'scripts/**/*.test.mjs' && node --experimental-strip-types --test src/lib/app-data/app-data.test.ts src/lib/app-data/readiness-schedule.test.ts src/lib/care.test.ts src/lib/auth/gate-identity.test.ts src/lib/auth/sign-in-gate.test.ts src/lib/sanitize.test.ts src/lib/tickets.test.ts",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
@@ -73,6 +73,8 @@
     "lru-cache": "^11.5.3",
     "lucide-react": "^0.510.0",
     "nitro": "3.0.260610-beta",
+    "pec-pcpos": "file:pec-pcpos",
+    "pec-pos": "file:pec-pos-0.1.0/package",
     "pg": "^8.16.3",
     "qrcode": "^1.5.4",
     "react": "^19.2.0",
@@ -107,5 +109,5 @@
     "prettier": "^3.4.0",
     "typescript-eslint": "^8.56.1"
   },
-  "version": "1.7.0"
+  "version": "1.8.0"
 }

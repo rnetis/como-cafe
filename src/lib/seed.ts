@@ -28,7 +28,11 @@ export function defaultSettings(): Settings {
     paper: 80,
     baud: 9600,
     autoPrint: false,
-    autoSms: false,
+    // Care is on out of the box: receipt texts, birthdays, win-backs and
+    // visit milestones run without anyone hunting for a switch first.
+    autoSms: true,
+    careOn: true,
+    careQuietDays: 21,
     expenseCustomLabel: "",
   };
 }
@@ -319,6 +323,7 @@ function buildCustomers(orders: Order[]): Customer[] {
       referredBy: prior.referredBy,
       favoriteId: prior.favoriteId,
       giftYear: prior.giftYear,
+      care: { birthday: 0, winback: 0, milestone: 0, milestoneVisits: 0 },
       visits: prior.priorVisits + mine.length,
       spent: prior.priorSpent + mine.reduce((sum, order) => sum + order.total, 0),
       points: prior.priorPoints + mine.reduce((sum, order) => sum + order.pointsEarned, 0),

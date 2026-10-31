@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { Btn, Field, fieldClass } from "@/components/como/bits";
-import { formatWhen, tx } from "@/lib/format";
+import { formatWhen, normPhone, tx } from "@/lib/format";
 import { birthdaySoon, quietDays, tierOf } from "@/lib/loyalty";
+import { careDraft, faNum } from "@/lib/care";
 import { posCall, type PosResult } from "@/lib/pos.functions";
 import { smsCall } from "@/lib/sms.functions";
 import { sendOut } from "@/lib/sms-send";
@@ -18,6 +19,7 @@ export function Wire() {
   const credit = useCafe((state) => state.credit);
   const patchSettings = useCafe((state) => state.patchSettings);
   const logSms = useCafe((state) => state.logSms);
+  const markCare = useCafe((state) => state.markCare);
   const setCredit = useCafe((state) => state.setCredit);
   const lang = settings.lang;
   const [segment, setSegment] = useState<Segment>("quiet");
@@ -35,11 +37,20 @@ export function Wire() {
 
   const pool = customers.filter((guest) => {
     if (!guest.smsOptIn) return false;
-    if (segment === "quiet") return quietDays(guest.lastVisit) >= 21;
+    if (segment === "quiet") return quietDays(guest.lastVisit) >= settings.careQuietDays;
     if (segment === "birthday") return birthdaySoon(guest.birthday);
     if (segment === "inner") return tierOf(guest.spent) === ("inner" satisfies Tier) || tierOf(guest.spent) === "como";
     return true;
   });
+
+  // Picking a round swaps the draft for the matching care template, so the
+  // campaign starts from the words the automation would have sent — still
+  // fully editable before it goes out.
+  const pick = (id: Segment) => {
+    setSegment(id);
+    if (id === "quiet") setDraft(careDraft("winback", settings, lang));
+    if (id === "birthday") setDraft(careDraft("birthday", settings, lang));
+  };
 
   const checkCredit = async () => {
     if (!settings.smsApiKey.trim()) {
@@ -66,6 +77,19 @@ export function Wire() {
       messages: pool.map((guest) => ({ mobile: guest.phone, text: draft.replaceAll("{name}", guest.name) })),
     });
     logSms({ to: outcome.to, body: outcome.body, kind: outcome.kind, status: outcome.status, detail: outcome.detail });
+    // A hand-written round is still customer care: stamp the guests the send
+    // actually covered, so the automation does not repeat the same round
+    // tomorrow. Only a real "sent" stamps — a failure stays due and retries.
+    if (outcome.status === "sent" && (segment === "birthday" || segment === "quiet")) {
+      const reached = new Set(outcome.to);
+      const kind = segment === "birthday" ? "birthday" : "winback";
+      const at = Date.now();
+      markCare(
+        pool
+          .filter((guest) => reached.has(normPhone(guest.phone)))
+          .map((guest) => ({ id: guest.id, kind, at })),
+      );
+    }
     setBusy(false);
     toast(outcome.status === "failed" ? outcome.detail : tx(lang, `${outcome.to.length} پیام ثبت شد`, `${outcome.to.length} kept`));
   };
@@ -88,6 +112,7 @@ export function Wire() {
         ip: settings.posIp.trim() || undefined,
         port: settings.posPort,
         comPort: settings.posComPort.trim() || undefined,
+        baudRate: settings.baud,
         timeoutMs: 5_000,
       },
     });
@@ -293,7 +318,7 @@ export function Wire() {
       <div className="mt-3 flex flex-wrap gap-1">
         {(
           [
-            ["quiet", tx(lang, "خاموش ۲۱ روز", "Quiet 21 days")],
+            ["quiet", tx(lang, `خاموش ${faNum(settings.careQuietDays)} روز`, `Quiet ${settings.careQuietDays} days`)],
             ["birthday", tx(lang, "تولد این هفته", "Birthday week")],
             ["inner", tx(lang, "کومو و حلقه", "Como & inner")],
             ["opt", tx(lang, "همه مجازها", "Everyone opted in")],
@@ -302,7 +327,7 @@ export function Wire() {
           <button
             key={id}
             type="button"
-            onClick={() => setSegment(id)}
+            onClick={() => pick(id)}
             className={`h-11 px-3 text-sm ${segment === id ? "bg-ink text-paper" : "border border-line"}`}
           >
             {label}

@@ -107,6 +107,8 @@ export type Customer = {
   favoriteId?: string;
   giftYear: number;
   walletBalance: number;
+  /** Care messages already sent — see CareStamp. */
+  care: CareStamp;
 };
 
 export type CustomerCreditMove = {
@@ -151,7 +153,23 @@ export type CashMove = {
   note: string;
 };
 
-export type SmsKind = "receipt" | "welcome" | "loyalty" | "campaign" | "birthday";
+export type SmsKind = "receipt" | "welcome" | "loyalty" | "campaign" | "birthday" | "care";
+
+/**
+ * When each customer-care message last went out. The stamps are what turn the
+ * care messages from a blast into an automation: a birthday text goes once a
+ * year, a win-back once per quiet stretch, a milestone once per visit count —
+ * no matter how often the desk reboots.
+ *
+ * `milestoneVisits` is the visit count the last milestone text was for (10,
+ * 25, 50, 100), so a guest sitting at 30 is not re-thanked for their 10th.
+ */
+export type CareStamp = {
+  birthday: number;
+  winback: number;
+  milestone: number;
+  milestoneVisits: number;
+};
 
 export type SmsLog = {
   id: string;
@@ -202,6 +220,11 @@ export type Settings = {
   baud: 9600 | 115200;
   autoPrint: boolean;
   autoSms: boolean;
+  /** Master switch for customer care: the automatic birthday / win-back /
+   *  milestone texts. On by default — this is the feature the desk ships with. */
+  careOn: boolean;
+  /** Quiet days before a guest counts as gone and earns a win-back text. */
+  careQuietDays: number;
   /** What the owner calls the extra column on every expense ("Supplier", "Paid by"…). */
   expenseCustomLabel: string;
 };

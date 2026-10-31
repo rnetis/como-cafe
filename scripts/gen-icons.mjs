@@ -3,7 +3,7 @@
 // Replace with real brand art later via `npm run tauri icon <1024px-png>`.
 import { deflateSync } from "node:zlib";
 import { mkdirSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 
 const ROOT = new URL("..", import.meta.url).pathname;
 const OUT = join(ROOT, "src-tauri/icons");

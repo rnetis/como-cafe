@@ -8,7 +8,7 @@ import {
   Settings,
   Users,
 } from "lucide-react";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 import { ComoMark } from "@/components/como/logo";
 import { Books } from "@/components/como/books";
 import { Cellar } from "@/components/como/cellar";
@@ -21,6 +21,7 @@ import { Wire } from "@/components/como/wire";
 import { cn } from "@/lib/cn";
 import { formatCompact, startOfDay, tx } from "@/lib/format";
 import { birthdaySoon, inSlowHour } from "@/lib/loyalty";
+import { runCare } from "@/lib/care";
 import { useCafe } from "@/lib/store";
 
 type View = "desk" | "tickets" | "cellar" | "books" | "guests" | "wire" | "house";
@@ -53,6 +54,20 @@ export function Desk() {
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
     return () => window.clearInterval(timer);
+  }, []);
+
+  // Customer care runs itself: whatever is due (birthday, win-back, milestone)
+  // goes out on boot, capped for the day. Nobody has to remember to open the
+  // Guests screen for the automation to do its job.
+  useEffect(() => {
+    let cancelled = false;
+    void runCare().then((result) => {
+      if (cancelled) return;
+      if (result.sent > 0 || result.status === "failed") toast(result.detail);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // An open tab is not today's money yet — only closed tickets count.

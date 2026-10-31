@@ -1,0 +1,3 @@
+[submodule "pec_ir"]
+	path = pec_ir
+	url = https://github.com/amirrezagh75/pec_ir

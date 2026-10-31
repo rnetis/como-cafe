@@ -62,8 +62,9 @@ export const smsCall = createServerFn({ method: "POST" })
       if (!/^\d{4,16}$/.test(data.lineNumber ?? "")) return fail("شماره خط نادرست است");
       if (!messageText || mobiles.length === 0) return fail("متن یا گیرنده خالی است");
       path = "/v1/send/bulk";
+      // sms.ir v1 wants `lineNumber` as a string — a number is rejected.
       body = {
-        lineNumber: Number(data.lineNumber),
+        lineNumber: data.lineNumber,
         messageText,
         mobiles,
         sendDateTime: null,
@@ -73,9 +74,11 @@ export const smsCall = createServerFn({ method: "POST" })
       const messageTexts = (data.messageTexts ?? []).slice(0, mobiles.length).map((text) => text.slice(0, 800));
       if (!/^\d{4,16}$/.test(data.lineNumber ?? "")) return fail("شماره خط نادرست است");
       if (messageTexts.length !== mobiles.length || mobiles.length === 0) return fail("تعداد متن و شماره یکی نیست");
-      path = "/v1/send/likeTolike";
+      // sms.ir spells this endpoint `likeToLike` (both capitals) — any other
+      // casing is a 404, which used to fail every personalised care round.
+      path = "/v1/send/likeToLike";
       body = {
-        lineNumber: Number(data.lineNumber),
+        lineNumber: data.lineNumber,
         messageTexts,
         mobiles,
         sendDateTime: null,

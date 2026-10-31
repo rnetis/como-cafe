@@ -22,6 +22,17 @@ import { CATEGORIES, MENU } from "../../src/lib/catalog.ts";
  */
 const loadSql = () => import("../../src/lib/db.ts").then((m) => m.getSql());
 
+/**
+ * The public API needs a real, persistent database. The PGLite fallback is a
+ * dev/preview convenience: it is in-memory (nothing survives a serverless
+ * invocation) and its `pglite.data` asset is not traced into the Vercel
+ * function bundle. A deployed instance without `DATABASE_URL` therefore
+ * answers 503 — a clean "not configured" — instead of failing per request.
+ */
+function dbConfigured(): boolean {
+  return Boolean(process.env.DATABASE_URL?.trim()) || !process.env.VERCEL;
+}
+
 interface PublicApiEvent {
   url: URL;
   req: Request;
@@ -81,6 +92,7 @@ async function customer(event: PublicApiEvent): Promise<Response> {
   }
   const phone = typeof body.phone === "string" ? body.phone.replace(/\D/g, "") : "";
   if (phone.length < 8) return json({ ok: false, error: "bad-phone" }, 400);
+  if (!dbConfigured()) return json({ ok: false, error: "db-not-configured" }, 503);
   const sql = await loadSql();
   const rows = await sql.query<CustomerRow>(
     "select phone, name, points, stamps, visits, spent, last_visit, birthday from public_customers where phone = $1",
@@ -117,6 +129,7 @@ async function sync(event: PublicApiEvent): Promise<Response> {
   if (event.req.headers.get("x-como-key") !== expected) {
     return json({ ok: false, error: "unauthorized" }, 401);
   }
+  if (!dbConfigured()) return json({ ok: false, error: "db-not-configured" }, 503);
   let body: SyncBody;
   try {
     body = (await event.req.json()) as SyncBody;
@@ -136,6 +149,13 @@ async function sync(event: PublicApiEvent): Promise<Response> {
     }))
     .filter((c) => c.phone.length >= 8);
   if (rows.length === 0) return json({ ok: true, synced: 0 });
+  // Hard cap: the POS publishes at most 500 guests per batch. Without this a
+  // single request could queue tens of thousands of upserts in one
+  // transaction (the endpoint is shared-secret, not per-user, so treat the
+  // payload as untrusted).
+  if (rows.length > 500) {
+    return json({ ok: false, error: "too-many" }, 413);
+  }
   const sql = await loadSql();
   await sql.query("begin");
   try {
@@ -173,7 +193,10 @@ export default async function publicApiMiddleware(
     if (path === "/api/public/customer" && method === "POST") return await customer(event);
     if (path === "/api/public/sync" && method === "POST") return await sync(event);
   } catch (err) {
-    return json({ ok: false, error: err instanceof Error ? err.message : "server" }, 500);
+    // Never reflect internals (driver text, file paths) to an anonymous
+    // caller; keep the detail in the server log.
+    console.error("[public-api]", err);
+    return json({ ok: false, error: "server" }, 500);
   }
   return json({ ok: false, error: "not-found" }, 404);
 }

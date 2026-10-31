@@ -15,6 +15,16 @@ export default tseslint.config(
       ".nitro/**",
       "node_modules/**",
       "src/routeTree.gen.ts",
+      // Vendored, repo-local packages: PEC terminal + payment-gateway sources
+      // and the built CJS output are third-party code kept outside npm. They
+      // are not ours to restyle, and linting them turned `npm run lint` into
+      // 60+ errors that masked real findings in src/.
+      "pec-pcpos/**",
+      "pec-pos-0.1.0/**",
+      "pec_ir/**",
+      "src-tauri/**",
+      "screenshots/**",
+      ".grok/**",
     ],
   },
   js.configs.recommended,

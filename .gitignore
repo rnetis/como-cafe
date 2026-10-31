@@ -5,3 +5,13 @@ node_modules/
 .env.*
 .vercel/
 .grok/preview.pid
+.grok/preview.log
+.cloud-attachments/
+src-tauri/target/
+dist/
+.output/
+.tanstack/tmp/
+screenshots/app-builder-dev.json
+*.tar.gz
+.swift-version
+*.log

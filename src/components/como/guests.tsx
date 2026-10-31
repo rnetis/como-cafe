@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Btn, fieldClass } from "@/components/como/bits";
 import { cn } from "@/lib/cn";
+import { CARE_DAILY_CAP, careKindLabel, dueCare, runCare, sentToday } from "@/lib/care";
 import { formatCompact, formatToman, formatWhen, tx } from "@/lib/format";
 import { birthdaySoon, daysUntilBirthday, quietDays, tierName, tierOf } from "@/lib/loyalty";
 import { sendOut } from "@/lib/sms-send";
@@ -10,6 +11,7 @@ import type { Customer } from "@/lib/types";
 
 export function Guests() {
   const lang = useCafe((state) => state.settings.lang);
+  const settings = useCafe((state) => state.settings);
   const customers = useCafe((state) => state.customers);
   const addCustomer = useCafe((state) => state.addCustomer);
   const [query, setQuery] = useState("");
@@ -23,7 +25,7 @@ export function Guests() {
   const list = customers.filter(
     (entry) =>
       (!q || entry.name.includes(q) || entry.phone.includes(q) || entry.referral.toLowerCase().includes(q.toLowerCase())) &&
-      (segment === "all" || (segment === "quiet" ? quietDays(entry.lastVisit) >= 21 : birthdaySoon(entry.birthday))),
+      (segment === "all" || (segment === "quiet" ? quietDays(entry.lastVisit) >= settings.careQuietDays : birthdaySoon(entry.birthday))),
   );
 
   return (
@@ -32,9 +34,10 @@ export function Guests() {
         <h1 className="text-2xl font-medium">{tx(lang, "مهمان‌ها و مشتریان", "Guests & customers")}</h1>
         <div className="mt-3 grid grid-cols-3 gap-1 text-center text-xs">
           <div className="border border-line bg-sheet p-2"><strong className="block text-base">{customers.length}</strong>{tx(lang, "همه", "Customers")}</div>
-          <div className="border border-line bg-sheet p-2"><strong className="block text-base">{customers.filter((entry) => quietDays(entry.lastVisit) >= 21).length}</strong>{tx(lang, "خاموش", "Quiet")}</div>
+          <div className="border border-line bg-sheet p-2"><strong className="block text-base">{customers.filter((entry) => quietDays(entry.lastVisit) >= settings.careQuietDays).length}</strong>{tx(lang, "خاموش", "Quiet")}</div>
           <div className="border border-line bg-sheet p-2"><strong className="block text-base">{customers.filter((entry) => birthdaySoon(entry.birthday)).length}</strong>{tx(lang, "تولد", "Birthdays")}</div>
         </div>
+        <CarePanel />
         <p className="mt-2 text-sm text-mute">
           {tx(
             lang,
@@ -53,7 +56,7 @@ export function Guests() {
         </div>
         <ul className="mt-3 divide-y divide-line border-y border-line">
           {list.map((entry) => {
-            const quiet = quietDays(entry.lastVisit) >= 21;
+            const quiet = quietDays(entry.lastVisit) >= settings.careQuietDays;
             return (
               <li key={entry.id}>
                 <button
@@ -128,12 +131,115 @@ export function Guests() {
               <li>{tx(lang, "مهمان ۰ · آشنا ۵٪ از ۲ میلیون · کومو ۸٪ از ۸ · حلقه ۱۲٪ از ۲۰", "Guest 0 · Regular 5% after 2m · Como 8% after 8m · Inner 12% after 20m")}</li>
               <li>{tx(lang, "هر ۱۰ هزار تومان یک امتیاز. صد امتیاز پنجاه هزار تومان است.", "One point per 10,000 toman. One hundred points are 50,000 toman.")}</li>
               <li>{tx(lang, "کد معرفی C و چهار رقم آخر است. هر دو طرف ۵۰ امتیاز می‌گیرند.", "Referral code is C plus the last four digits. Both sides get 50 points.")}</li>
-              <li>{tx(lang, "بیست‌ویک روز سکوت، برای پیام دلتنگی علامت می‌خورد.", "Twenty-one quiet days flags a win-back message.")}</li>
+              <li>{tx(lang, `${settings.careQuietDays} روز سکوت، برای پیام دلتنگی علامت می‌خورد.`, `${settings.careQuietDays} quiet days flags a win-back message.`)}</li>
             </ul>
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+function CarePanel() {
+  const lang = useCafe((state) => state.settings.lang);
+  const settings = useCafe((state) => state.settings);
+  const customers = useCafe((state) => state.customers);
+  const patchSettings = useCafe((state) => state.patchSettings);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState("");
+  const due = dueCare(customers, settings, lang);
+  const done = sentToday(customers);
+  const preview = due.slice(0, 3);
+
+  const sendNow = async () => {
+    setBusy(true);
+    try {
+      // The default cap (12) applies; the button is not a licence to flood the
+      // list — the panel already shows how many are waiting.
+      const result = await runCare();
+      setNote(result.detail);
+      if (result.status === "failed") toast(result.detail);
+    } catch (error) {
+      setNote(error instanceof Error ? error.message : tx(lang, "ارسال نشد", "Could not send"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="mt-4 border border-line bg-sheet p-3 text-sm">
+      <div className="flex items-center justify-between gap-2">
+        <p className="font-medium">{tx(lang, "مراقبت از مشتری", "Customer care")}</p>
+        <label className="flex items-center gap-2 text-xs text-mute">
+          <input
+            type="checkbox"
+            checked={settings.careOn}
+            onChange={(event) => patchSettings({ careOn: event.target.checked })}
+          />
+          {settings.careOn ? tx(lang, "روشن", "On") : tx(lang, "خاموش", "Off")}
+        </label>
+      </div>
+      <p className="mt-1 text-xs text-mute">
+        {tx(
+          lang,
+          `${due.length} در نوبت · ${done} امروز رفت · سقف ${CARE_DAILY_CAP}`,
+          `${due.length} due · ${done} sent today · cap ${CARE_DAILY_CAP}`,
+        )}
+      </p>
+      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+        <label className="text-mute" htmlFor="care-quiet">
+          {tx(lang, "روز سکوت", "Quiet days")}
+        </label>
+        <input
+          id="care-quiet"
+          dir="ltr"
+          type="number"
+          min={1}
+          max={120}
+          className={`${fieldClass} !h-8 w-16 py-1`}
+          value={settings.careQuietDays}
+          onChange={(event) =>
+            patchSettings({
+              careQuietDays: Math.min(120, Math.max(1, Number(event.target.value) || 1)),
+            })
+          }
+        />
+        <Btn tone="line" disabled={busy || due.length === 0} onClick={() => void sendNow()}>
+          {busy ? tx(lang, "می‌رود…", "Sending…") : tx(lang, "ارسال اکنون", "Send now")}
+        </Btn>
+      </div>
+      <ul className="mt-2 divide-y divide-line border-t border-line">
+        {preview.map((entry) => (
+          <li key={`${entry.customer.id}-${entry.kind}`} className="py-2">
+            <p className="flex items-baseline justify-between gap-2 text-xs">
+              <span className="font-medium">{entry.customer.name}</span>
+              <span className="text-mute">{careKindLabel(entry.kind, lang)}</span>
+            </p>
+            <p className="mt-0.5 line-clamp-2 text-xs text-mute">{entry.text}</p>
+          </li>
+        ))}
+        {due.length === 0 ? (
+          <li className="py-2 text-xs text-mute">
+            {note ||
+              tx(
+                lang,
+                settings.careOn
+                  ? "چیزی در نوبت نیست؛ تولدها و سکوت‌ها خودشان می‌آیند."
+                  : "خاموش است — تولد، دلتنگی و سالگرد ارسال نمی‌شود.",
+                settings.careOn
+                  ? "Nothing due — birthdays and quiet guests will show up on their own."
+                  : "Off — birthdays, win-backs and milestones are not sent.",
+              )}
+          </li>
+        ) : null}
+      </ul>
+      {due.length > preview.length ? (
+        <p className="mt-1 text-xs text-mute">
+          {tx(lang, `و ${due.length - preview.length} پیام دیگر`, `and ${due.length - preview.length} more`)}
+        </p>
+      ) : null}
+      {note ? <p className="mt-1 text-xs text-mute">{note}</p> : null}
+    </section>
   );
 }
 
@@ -150,6 +256,7 @@ function Profile({ guest, onBack }: { guest: Customer; onBack: () => void }) {
   const allCreditMoves = useCafe((state) => state.customerCreditMoves);
   const creditMoves = allCreditMoves.filter((move) => move.customerId === guest.id).slice(0, 8);
   const logSms = useCafe((state) => state.logSms);
+  const markCare = useCafe((state) => state.markCare);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(guest.name);
   const [phone, setPhone] = useState(guest.phone);
@@ -184,6 +291,12 @@ function Profile({ guest, onBack }: { guest: Customer; onBack: () => void }) {
       messages: [{ mobile: guest.phone, text }],
     });
     logSms({ to: outcome.to, body: outcome.body, kind, status: outcome.status, detail: outcome.detail });
+    // A hand-sent birthday note counts as this year's card: stamp it so the
+    // automation does not follow up with a second one, and so the 300-day
+    // re-send rule starts counting from here. Failed sends stamp nothing.
+    if (kind === "birthday" && outcome.status === "sent") {
+      markCare([{ id: guest.id, kind: "birthday", at: Date.now() }]);
+    }
     toast(outcome.status === "failed" ? outcome.detail : tx(lang, "پیام ثبت شد", "Message kept"));
   };
 
@@ -224,7 +337,7 @@ function Profile({ guest, onBack }: { guest: Customer; onBack: () => void }) {
         {guest.points} {tx(lang, "امتیاز", "points")} · {guest.visits} {tx(lang, "مراجعه", "visits")}
         {favorite ? ` · ${tx(lang, "معمول", "Usual")}: ${lang === "fa" ? favorite.nameFa : favorite.nameEn}` : ""}
         {days !== null && days <= 7 ? ` · ${tx(lang, `تولد تا ${days} روز`, `birthday in ${days}d`)}` : ""}
-        {quiet >= 21 ? ` · ${tx(lang, `${quiet} روز خاموش`, `${quiet} quiet days`)}` : ""}
+        {quiet >= settings.careQuietDays ? ` · ${tx(lang, `${quiet} روز خاموش`, `${quiet} quiet days`)}` : ""}
       </p>
       <section className="mt-4 border border-line bg-sheet p-4">
         <div className="flex items-center justify-between gap-3"><div><p className="text-xs text-mute">{tx(lang, "اعتبار پیش‌پرداخت مشتری", "Prepaid store credit")}</p><p className="mt-1 text-xl font-medium">{formatToman(guest.walletBalance, lang)}</p></div><span className="text-xs text-mute">{tx(lang, "قابل خرج در صندوق", "Available at checkout")}</span></div>

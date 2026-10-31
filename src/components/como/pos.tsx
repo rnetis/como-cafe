@@ -201,15 +201,28 @@ export function Pos() {
         fresh.settings.posType === "LAN"
           ? { ip: fresh.settings.posIp.trim(), port: fresh.settings.posPort }
           : { comPort: fresh.settings.posComPort.trim() };
-      const sent: PosResult = await posCall({
-        data: {
-          op: "pay",
-          amount: placed.total,
-          type: fresh.settings.posType,
-          ...device,
-          merchantTitle: `COMO ${placed.number}`.slice(0, 40),
-        },
-      });
+      // A server-function call can reject outside SSR (Tauri/SPA build, 5xx,
+      // network drop). Treat that exactly like a device failure so the ticket
+      // stays visible for a retry/void instead of swallowing the receipt step.
+      let sent: PosResult;
+      try {
+        sent = await posCall({
+          data: {
+            op: "pay",
+            amount: placed.total,
+            type: fresh.settings.posType,
+            ...device,
+            baudRate: fresh.settings.baud,
+            merchantTitle: `COMO ${placed.number}`.slice(0, 40),
+          },
+        });
+      } catch {
+        sent = {
+          ok: false,
+          responseCode: null,
+          message: tx(lang, "دستگاه یا شبکه در دسترس نیست", "The device or network is unreachable"),
+        };
+      }
       if (!sent.ok || sent.responseCode !== "00") {
         toast(
           tx(
