@@ -85,6 +85,31 @@ jobs:
             - Repo cleanup: Rust build artifacts no longer in the source tree.
 
             Download the installer for your platform from the assets below. The installers are unsigned and may show the operating system's standard first-run security prompt.
-          releaseDraft: false
+          # Draft first: with `false`, the first matrix job to finish creates
+          # the release and every other platform fails with "already exists"
+          # (this killed the v1.7.0 and v1.8.0 Windows/Linux jobs). The draft
+          # is published by the `publish` job below once all builds pass.
+          releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
+
+  release-publish:
+    needs: publish
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Publish the drafted release
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { data: rel } = await github.rest.repos.getReleaseByTag({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag: context.ref.replace('refs/tags/', ''),
+            });
+            await github.rest.repos.updateRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: rel.id,
+              draft: false,
+            });
