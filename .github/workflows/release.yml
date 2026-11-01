@@ -78,11 +78,8 @@ jobs:
             COMO Desk ${{ github.ref_name }} for Windows, macOS (Intel and Apple Silicon), and Linux.
 
             Highlights:
-            - Customer care: automatic birthday, win-back and visit-milestone texts (opt-in for books created before this release, one text per guest per day, 12/day cap). Hand-sent birthday/quiet rounds now stamp the guests, so the automation never repeats them.
-            - PEC card terminal bridge: correct reply framing, a 90 s card-sale timeout, and `pec-pos@0.1.0` / `pec-pcpos` resolve reliably in dev, Vercel and desktop builds.
-            - SMS.ir fixes: the like-to-like endpoint spelling (`/v1/send/likeToLike`) and `lineNumber` sent as a string — personalised care rounds send again.
-            - Safer data migration: existing SMS preferences are kept exactly as set.
-            - Repo cleanup: Rust build artifacts no longer in the source tree.
+            - POS wire format pinned to the real terminal: the request COMO sends is now tested byte-for-byte against captured traffic from PEC_Tester_2022 ↔ the physical device (192.168.0.195:1362), and reply framing/response-code parsing are regression-guarded.
+            - Release pipeline fix: installers build into a draft release and publish once every platform has attached, ending the "already exists" race that killed the Windows/Linux jobs on v1.7.0 and v1.8.0.
 
             Download the installer for your platform from the assets below. The installers are unsigned and may show the operating system's standard first-run security prompt.
           # Draft first: with `false`, the first matrix job to finish creates
