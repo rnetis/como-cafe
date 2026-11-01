@@ -78,8 +78,8 @@ jobs:
             COMO Desk ${{ github.ref_name }} for Windows, macOS (Intel and Apple Silicon), and Linux.
 
             Highlights:
-            - POS wire format pinned to the real terminal: the request COMO sends is now tested byte-for-byte against captured traffic from PEC_Tester_2022 ↔ the physical device (192.168.0.195:1362), and reply framing/response-code parsing are regression-guarded.
-            - Release pipeline fix: installers build into a draft release and publish once every platform has attached, ending the "already exists" race that killed the Windows/Linux jobs on v1.7.0 and v1.8.0.
+            - POS sale requests now match the real terminal's expected traffic exactly: the extra merchant-title (T2) tag is dropped — every card charge sends only PR, AM, CU and PD, byte-identical to PEC_Tester_2022, which is what the device at 192.168.0.195 accepts.
+            - POS wire format is regression-tested against frames captured from the live terminal, and the release pipeline builds into a draft that publishes once every platform has attached.
 
             Download the installer for your platform from the assets below. The installers are unsigned and may show the operating system's standard first-run security prompt.
           # Draft first: with `false`, the first matrix job to finish creates
