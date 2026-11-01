@@ -99,11 +99,16 @@ jobs:
         uses: actions/github-script@v8
         with:
           script: |
-            const { data: rel } = await github.rest.repos.getReleaseByTag({
+            // Draft releases are not visible through get-release-by-tag, so
+            // walk the list and take the draft that carries the tag.
+            const tag = context.ref.replace('refs/tags/', '');
+            const { data: releases } = await github.rest.repos.listReleases({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              tag: context.ref.replace('refs/tags/', ''),
+              per_page: 100,
             });
+            const rel = releases.find((r) => r.draft && r.tag_name === tag);
+            if (!rel) throw new Error(`No draft release for ${tag}`);
             await github.rest.repos.updateRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
