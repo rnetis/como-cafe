@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
+import { createRequire } from "node:module";
 import { describe, it } from "node:test";
 import { pecDeclaredLength, pecReplyComplete } from "./pec-frame.ts";
+
+const codec = createRequire(import.meta.url)("pec-pcpos");
 
 /**
  * A PEC reply is `[4-digit body length]` + `[RQ + 3-digit body length + tags]`.
@@ -68,5 +71,32 @@ describe("pecReplyComplete", () => {
     const reply = new Uint8Array(Buffer.from(MINIMAL_REPLY, "ascii"));
     assert.equal(pecReplyComplete(reply), true);
     assert.equal(pecReplyComplete(reply.subarray(0, 13)), false);
+  });
+});
+
+describe("against the captured terminal wire traffic", () => {
+  // Captured between PEC_Tester_2022 (192.168.0.137) and the real terminal
+  // (192.168.0.195:1362) — one sale attempt, request retransmitted by TCP,
+  // single 22-byte reply six seconds later.
+  const CAPTURED_REQUEST = "0039RQ034PR006000000AM0041000CU003364PD0011";
+  const CAPTURED_REPLY = "0018RS013RS00299PD0011";
+
+  it("reproduces the tester's request byte for byte", () => {
+    const built = codec.buildMessage({ amount: "1000", prCode: "000000", currency: "364" });
+    assert.equal(built.bytes.toString("ascii"), CAPTURED_REQUEST);
+  });
+
+  it("sees the captured 22-byte reply as complete (4 + declared 18)", () => {
+    const reply = Buffer.from(CAPTURED_REPLY, "ascii");
+    assert.equal(pecDeclaredLength(reply), 18);
+    assert.equal(reply.length, 22);
+    assert.equal(pecReplyComplete(reply), true);
+    // One byte short is not complete.
+    assert.equal(pecReplyComplete(reply.subarray(0, 21)), false);
+  });
+
+  it("reads the captured reply's response code from the RS tag", () => {
+    const parsed = codec.parseResponse(CAPTURED_REPLY);
+    assert.equal(parsed.responseCode, "99");
   });
 });
