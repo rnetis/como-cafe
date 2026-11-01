@@ -213,7 +213,9 @@ export function Pos() {
             type: fresh.settings.posType,
             ...device,
             baudRate: fresh.settings.baud,
-            merchantTitle: `COMO ${placed.number}`.slice(0, 40),
+            // No receipt/title tags: the captured tester traffic
+            // (192.168.0.195:1362) shows the terminal is only ever sent
+            // PR, AM, CU and PD — an extra T2 risks an RS=99 rejection.
           },
         });
       } catch {
